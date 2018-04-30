@@ -12,6 +12,9 @@ __version__ = "0.0.1"
 
 import tensorflow as tf
 import ipdb
+import logging
+
+log = logging.getLogger('encoder')
 
 class CNNEncoder(object):
     def __init__(self, embedding_size=128, vocab_size=24,
@@ -27,31 +30,40 @@ class CNNEncoder(object):
         self.outputsize = outputsize
         self.inputsize = inputsize
         self.outputs = None
-        
+
     def init_variables(self):
         self.xs_ = tf.placeholder(shape=[None, self.inputsize], dtype=tf.int32, name='x_in')
 
         # input activation variables
         self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
                                    dtype=tf.float32)
-        
+
         ## cnn kernel takes in shape [size,  (input channels, output channels)]
         self.cnnkernel = tf.get_variable('kernel', [self.kernelsize, self.embedding_size, self.filternum],
                                          dtype=tf.float32)
-        
-        
+
+
     def build(self):
         self.init_variables()
-        
+
         self.cnn_inputs = tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in')
-        self.cnnout = tf.nn.conv1d(self.cnn_inputs, self.cnnkernel, 1, 'VALID', data_format='NWC', name='cnn1')
-        
-        self.maxpool = tf.layers.Flatten()(tf.layers.max_pooling1d(self.cnnout, self.poolsize, 
-                                                          self.poolstride, name='maxpool1'))
-        
-        self.fcweights = tf.get_variable('fc1', [self.maxpool.shape[-1], self.outputsize], 
+        self.cnnout = tf.nn.conv1d(self.cnn_inputs, self.cnnkernel, 1, 'VALID', data_format='NHWC', name='cnn1')
+
+        # log.info('shape-{}'.format(str(tf.shape(self.cnnout))))
+        self.maxpool = tf.layers.max_pooling1d(self.cnnout, self.poolsize,
+                                              self.poolstride, name='maxpool1')
+
+        log.info('shape_cnnout-{}'.format(str(self.maxpool.get_shape())))
+        # self.maxpool = tf.reshape(self.maxpool, shape=[tf.shape(self.maxpool)[0], -1])
+        self.maxpool = tf.layers.Flatten()(self.maxpool)
+
+        log.info('shape_maxpool-{}'.format(str((self.maxpool.get_shape()))))
+
+        self.fcweights = tf.get_variable('fc1', shape=[self.maxpool.shape[1],
+                                                       self.outputsize],
                                          dtype=tf.float32)
-        self.outputs = tf.matmul(self.maxpool, self.fcweights)
+        self.outputs = tf.nn.relu(tf.matmul(self.maxpool, self.fcweights), name='enc_out')
+        log.info('shape_encoderout-{}'.format(str((self.outputs.get_shape()))))
         return self
-    
-    
+
+

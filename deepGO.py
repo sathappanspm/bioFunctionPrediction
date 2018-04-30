@@ -6,10 +6,15 @@
     Last Modified:
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 __author__ = "Sathappan Muthiah"
 __email__ = "sathap1@vt.edu"
 __version__ = "0.0.1"
 __processor__ = 'deepGO'
+
 
 import pandas as pd
 import tensorflow as tf
@@ -65,7 +70,7 @@ def create_args():
         100,
         'number of validation batches to use'
     )
-    
+
     tf.app.flags.DEFINE_integer(
         'num_epochs',
         5,
@@ -77,11 +82,11 @@ def create_args():
 def main(argv):
     funcs = pd.read_pickle(os.path.join(FLAGS.data, '{}.pkl'.format(FLAGS.function)))['functions'].values
     funcs = GODAG.initialize_idmap(funcs)
-    
+
     log.info('GO DAG initialized. Updated function list-{}'.format(len(funcs)))
     FeatureExtractor.load(FLAGS.data)
     log.info('Loaded amino acid and ngram mapping data')
-    
+
     with tf.Session() as sess:
         data = DataLoader()
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
@@ -108,12 +113,13 @@ def main(argv):
         bestf1 = 0
         metagraphFlag = True
         log.info('starting epochs')
+        iternum = 0
         for epoch in range(FLAGS.num_epochs):
             for x, y in train_iter:
-                log.info('data-{}, labels-{}'.format(x.shape, y.shape))
                 _, loss, summary = sess.run([decoder.train, decoder.loss, decoder.summary],
                                             feed_dict={decoder.ys_: y, encoder.xs_: x})
                 train_writer.add_summary(summary, step)
+                log.info('step-{}, loss-{}'.format(iternum, round(loss, 2)))
 
                 if step % 100 == 0:
                     prec, recall, f1, summary = sess.run([decoder.precision, decoder.recall,
@@ -128,7 +134,7 @@ def main(argv):
                         bestf1 = f1
                         wait = 0
                         chkpt.save(sess, os.path.join(OUTDIR, 'savedmodels',
-                                                      'model_{}'.format(start_date)),
+                                                      'model_{}_{}'.format(FLAGS.function, start_date)),
                                    global_step=step, write_meta_graph=metagraphFlag)
                         metagraphFlag = False
 

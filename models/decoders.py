@@ -70,7 +70,7 @@ class HierarchicalGODecoder(object):
 
         visited = set(queue)
         log.info('created node for all functions')
-        
+
         while len(queue) > 0:
             node = queue.popleft()
             out = self.layers[node]
