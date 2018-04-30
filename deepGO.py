@@ -122,7 +122,7 @@ def main(argv):
                     test_writer.add_summary(summary, step)
                     f1 = round(f1, 2)
                     log.info('epoch: {} \n precision: {}, recall: {}, f1: {}'.format(epoch,
-                                                                                     round(precision, 2),
+                                                                                     round(prec, 2),
                                                                                      round(recall, 2), f1))
                     if f1 > bestf1:
                         bestf1 = f1
