@@ -36,7 +36,7 @@ class CNNEncoder(object):
 
         # input activation variables
         self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
-                                   dtype=tf.float32)
+                                   dtype=tf.float32, initializer=tf.initializers.random_uniform)
 
         ## cnn kernel takes in shape [size,  (input channels, output channels)]
         self.cnnkernel = tf.get_variable('kernel', [self.kernelsize, self.embedding_size, self.filternum],
@@ -46,8 +46,9 @@ class CNNEncoder(object):
     def build(self):
         self.init_variables()
 
-        self.cnn_inputs = tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in')
-        self.cnnout = tf.nn.conv1d(self.cnn_inputs, self.cnnkernel, 1, 'VALID', data_format='NHWC', name='cnn1')
+        self.cnn_inputs = tf.nn.dropout(tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in'), 0.2)
+        self.cnnout = tf.nn.relu(tf.nn.conv1d(self.cnn_inputs, self.cnnkernel, 1,
+                                              'VALID', data_format='NWC', name='cnn1'))
 
         # log.info('shape-{}'.format(str(tf.shape(self.cnnout))))
         self.maxpool = tf.layers.max_pooling1d(self.cnnout, self.poolsize,
@@ -62,7 +63,8 @@ class CNNEncoder(object):
         self.fcweights = tf.get_variable('fc1', shape=[self.maxpool.shape[1],
                                                        self.outputsize],
                                          dtype=tf.float32)
-        self.outputs = tf.nn.relu(tf.matmul(self.maxpool, self.fcweights), name='enc_out')
+        self.fcbias = tf.get_variable('fcbias', shape=[self.outputsize])
+        self.outputs = tf.nn.relu(tf.matmul(self.maxpool, self.fcweights) + self.fcbias, name='enc_out')
         log.info('shape_encoderout-{}'.format(str((self.outputs.get_shape()))))
         return self
 

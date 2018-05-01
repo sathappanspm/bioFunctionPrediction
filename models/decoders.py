@@ -40,7 +40,7 @@ class HierarchicalGODecoder(object):
 
     def __init__(self, funcs, inputlayer, root='mf',
                  lossfunc=tf.nn.sigmoid_cross_entropy_with_logits,
-                 learning_rate=0.01):
+                 learning_rate=0.001):
         self.root = HierarchicalGODecoder.FUNC_DICT.get(root, '')
         self.inputs = inputlayer
         self.lossfunc = lossfunc
@@ -50,16 +50,17 @@ class HierarchicalGODecoder(object):
 
     def get_node_func(self, node):
         name = node.split(':')[1]
-        var = tf.get_variable(name, [self.inputs.shape[-1], 1], dtype=tf.float32)
-        return tf.sigmoid(tf.matmul(self.inputs, var), name='{}_out'.format(name))
+        var = tf.get_variable(name, shape=[self.inputs.shape[-1], 1], dtype=tf.float32)
+        bias = tf.get_variable('{}_b'.format(name), shape=[1], dtype=tf.float32)
+        return tf.sigmoid(tf.matmul(self.inputs, var) + bias, name='{}_out'.format(name))
 
     def init_variables(self, godag):
         self.ys_ = tf.placeholder(shape=[None, len(godag.GOIDS)],
                                   dtype=tf.float32, name='ylabel')
         self.layers = {}
-        if self.root != '':
-            if self.root in self.funcs:
-                self.funcs.remove(self.root)
+        # if self.root != '':
+        #    if self.root in self.funcs:
+        #        self.funcs.remove(self.root)
 
         queue = deque()
         funcset = set(self.funcs)
@@ -106,18 +107,20 @@ class HierarchicalGODecoder(object):
 
     def build(self, godag):
         self.init_variables(godag)
-        logits = tf.log((self.output + tf.constant(1e-7))/(1 - self.output + tf.constant(1e-7)))
+        clippedout = tf.clip_by_value(self.output, tf.constant(1e-7), 1 - tf.constant(1e-7))
+        logits = tf.log(clippedout / (1 - clippedout))
         self.loss = tf.reduce_mean(self.lossfunc(labels=self.ys_[:, :len(self.funcs)], logits=logits))
 
         tf.summary.scalar('loss', self.loss)
-        self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+        self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+        # self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         self.train = self.optimizer.minimize(self.loss)
 
         self.prediction = tf.concat([self.output,
                                      tf.zeros((tf.shape(self.output)[0],
                                               len(godag.GOIDS) - len(self.funcs)))], axis=1)
 
-        self.precision, self.recall, self.f1score = calc_performance_metrics(self.ys_, self.prediction)
-        tf.summary.scalar('f1', self.f1score)
+        # self.precision, self.recall, self.f1score = calc_performance_metrics(self.ys_, self.prediction)
+        # tf.summary.scalar('f1', self.f1score)
         self.summary = tf.summary.merge_all()
         return self

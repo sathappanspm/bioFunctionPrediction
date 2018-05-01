@@ -96,7 +96,7 @@ def main(argv):
                                   seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4,
                                   functype=FLAGS.function, featuretype='ngrams')
 
-        encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap), inputsize=train_iter.expectedshape).build()
+        encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap) + 1, inputsize=train_iter.expectedshape).build()
         log.info('built encoder')
         decoder = HierarchicalGODecoder(funcs, encoder.outputs, FLAGS.function).build(GODAG)
         log.info('built decoder')
@@ -125,27 +125,27 @@ def main(argv):
 
                 if step % 100 == 0:
                     log.info('epoch-{}, step-{}, loss-{}'.format(epoch, step, round(loss, 2)))
-                    prec, recall, f1, summary = sess.run([decoder.precision, decoder.recall,
-                                                  decoder.f1score, decoder.summary],
-                                                 feed_dict={decoder.ys_: y, encoder.xs_: x})
-                    test_writer.add_summary(summary, step)
-                    f1 = round(f1, 2)
-                    log.info('step: {} \n precision: {}, recall: {}, f1: {}'.format(step,
-                                                                                     round(prec, 2),
-                                                                                     round(recall, 2), f1))
-                    if f1 > bestf1:
-                        bestf1 = f1
-                        wait = 0
-                        chkpt.save(sess, os.path.join(FLAGS.outputdir, 'savedmodels',
-                                                      'model_{}_{}'.format(FLAGS.function, int(time.time()))),
-                                   global_step=step, write_meta_graph=metagraphFlag)
-                        metagraphFlag = False
+                    # prec, recall, f1, summary = sess.run([decoder.precision, decoder.recall,
+                    #                              decoder.f1score, decoder.summary],
+                    #                             feed_dict={decoder.ys_: y, encoder.xs_: x})
+                    #test_writer.add_summary(summary, step)
+                    #f1 = round(f1, 2)
+                    #log.info('step: {} \n precision: {}, recall: {}, f1: {}'.format(step,
+                    #                                                                 round(prec, 2),
+                    #                                                                 round(recall, 2), f1))
+                    #if f1 > bestf1:
+                    #    bestf1 = f1
+                    #    wait = 0
+                    #    chkpt.save(sess, os.path.join(FLAGS.outputdir, 'savedmodels',
+                    #                                  'model_{}_{}'.format(FLAGS.function, int(time.time()))),
+                    #               global_step=step, write_meta_graph=metagraphFlag)
+                    #    metagraphFlag = False
 
-                    else:
-                        wait += 1
-                        if wait > maxwait:
-                            log.info('f1 didnt improve for last {} validation steps, so stopping')
-                            break
+                    #else:
+                    #    wait += 1
+                    #    if wait > maxwait:
+                    #        log.info('f1 didnt improve for last {} validation steps, so stopping')
+                    #        break
 
                 step += 1
 

@@ -220,7 +220,8 @@ class DataIterator(object):
     def __init__(self, batchsize=1,
                  functype='', size=100, seqlen=2000,
                  featuretype='onehot', dataloader=None,
-                 numfiles=None, ngramsize=3, **kwargs):
+                 numfiles=None, ngramsize=3, all_labels=True,
+                 numfuncs=0, **kwargs):
         self.fobj = []
         self.fnames = []
         self.current = 0
@@ -233,6 +234,8 @@ class DataIterator(object):
         self.featuretype = featuretype
         self.loader = dataloader
         self.ngramsize = ngramsize
+        self.all_labels = all_labels
+        self.numfuncs = numfuncs
         self.expectedshape = ((self.maxseqlen - self.ngramsize + 1)
                               if self.featuretype == 'ngrams' else self.maxseqlen)
 
@@ -305,6 +308,10 @@ class DataIterator(object):
             inputs = np.concatenate([inputs.as_matrix(),
                                       np.zeros((inputs.shape[0],
                                                 self.expectedshape - inputs.shape[1]))], axis=1)
+        log.info('batch shape is {}-{}'.format(inputs.shape, labels.shape))
+        log.info('max id is {}'.format(np.max(inputs)))
+        if self.all_labels is False:
+            labels = labels[:, :self.numfuncs]
         return inputs, labels
 
     def loadfile(self):
