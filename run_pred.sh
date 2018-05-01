@@ -6,13 +6,14 @@
 #SBATCH --nodes=1 --ntasks-per-node=1 --gres=gpu:1
 ##SBATCH --nodes=1 --ntasks-per-node=10 
 #SBATCH --mem=50G
-module load tensorflow
+#module load tensorflow
 #module load CUDA/8.0.44
-#module load cudnn/7.0
-#module load Python/3.6.4-foss-2017a
+module load Python/3.6.4-foss-2017a
+module load cuda90
+module load cudnn/7.0
 #module load TensorFlow
 source /home/sathap1/.start_pegasus.sh
-#source /home/sathap1/pegasus_local/venvs/deepgo/bin/activate
+source /home/sathap1/pegasus_local/venvs/deepgo/bin/activate
 #pip install tensorflow-gpu --upgrade
 #pip install tensorflow-gpu==1.2.0 # --upgrade
 #pip install obonet --user

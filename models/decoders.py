@@ -20,12 +20,14 @@ def calc_performance_metrics(labels, predictions, threshold=0.35):
     labels = tf.cast(labels, tf.bool)
     predictions = predictions > threshold
     tp = tf.reduce_sum(tf.cast(tf.logical_and(labels, predictions), tf.float32), axis=1)
-    fp = tf.reduce_sum(tf.cast(tf.logical_and(labels, predictions), tf.float32), axis=1)
+    fp = tf.reduce_sum(tf.cast(tf.logical_and(tf.logical_not(labels), predictions), tf.float32), axis=1)
     fn = tf.reduce_sum(tf.cast(tf.logical_and(labels, tf.logical_not(predictions)), tf.float32), axis=1)
-    precision = tp / (tp + fp)
-    recall = tp / (tp + fn)
+    precision = tp / (tp + fp + tf.constant(1e-7))
+    recall = tp / (tp + fn + tf.constant(1e-7))
     f1 = 2 * (precision * recall) / (precision + recall + tf.constant(1e-7))
     return tf.reduce_mean(precision), tf.reduce_mean(recall), tf.reduce_mean(f1)
+    # tf.logging.info('precision- {}'.format(tf.reduce_sum(precision)))
+    # return tf.reduce_sum(tp), tf.reduce_sum(fp), tf.reduce_sum(fn)
 
 
 class HierarchicalGODecoder(object):
@@ -104,7 +106,8 @@ class HierarchicalGODecoder(object):
 
     def build(self, godag):
         self.init_variables(godag)
-        self.loss = tf.reduce_sum(self.lossfunc(labels=self.ys_[:, :len(self.funcs)], logits=self.output))
+        logits = tf.log((self.output + tf.constant(1e-7))/(1 - self.output + tf.constant(1e-7)))
+        self.loss = tf.reduce_mean(self.lossfunc(labels=self.ys_[:, :len(self.funcs)], logits=logits))
 
         tf.summary.scalar('loss', self.loss)
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)

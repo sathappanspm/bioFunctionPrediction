@@ -15,7 +15,7 @@ __email__ = "sathap1@vt.edu"
 __version__ = "0.0.1"
 __processor__ = 'deepGO'
 
-
+import time
 import pandas as pd
 import tensorflow as tf
 from utils.dataloader import GODAG, FeatureExtractor
@@ -26,8 +26,8 @@ import json
 import logging
 import os
 
-logging.basicConfig(filename='{}.log'.format(__processor__),
-                    level=logging.DEBUG)
+# log = logging.basicConfig(filename='{}.log'.format(__processor__),
+                    # level=logging.DEBUG)
 
 log = logging.getLogger('main')
 
@@ -81,7 +81,7 @@ def create_args():
 
 def main(argv):
     funcs = pd.read_pickle(os.path.join(FLAGS.data, '{}.pkl'.format(FLAGS.function)))['functions'].values
-    funcs = GODAG.initialize_idmap(funcs)
+    funcs = GODAG.initialize_idmap(funcs, FLAGS.function)
 
     log.info('GO DAG initialized. Updated function list-{}'.format(len(funcs)))
     FeatureExtractor.load(FLAGS.data)
@@ -89,10 +89,10 @@ def main(argv):
 
     with tf.Session() as sess:
         data = DataLoader()
-        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
+        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams')
 
-        train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
+        train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
                                   seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4,
                                   functype=FLAGS.function, featuretype='ngrams')
 
@@ -113,28 +113,31 @@ def main(argv):
         bestf1 = 0
         metagraphFlag = True
         log.info('starting epochs')
-        iternum = 0
         for epoch in range(FLAGS.num_epochs):
             for x, y in train_iter:
+                if x.shape[0] != y.shape[0]:
+                    raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
+
                 _, loss, summary = sess.run([decoder.train, decoder.loss, decoder.summary],
                                             feed_dict={decoder.ys_: y, encoder.xs_: x})
                 train_writer.add_summary(summary, step)
-                log.info('step-{}, loss-{}'.format(iternum, round(loss, 2)))
+                log.info('step-{}, loss-{}'.format(step, round(loss, 2)))
 
                 if step % 100 == 0:
+                    log.info('epoch-{}, step-{}, loss-{}'.format(epoch, step, round(loss, 2)))
                     prec, recall, f1, summary = sess.run([decoder.precision, decoder.recall,
                                                   decoder.f1score, decoder.summary],
                                                  feed_dict={decoder.ys_: y, encoder.xs_: x})
                     test_writer.add_summary(summary, step)
                     f1 = round(f1, 2)
-                    log.info('epoch: {} \n precision: {}, recall: {}, f1: {}'.format(epoch,
+                    log.info('step: {} \n precision: {}, recall: {}, f1: {}'.format(step,
                                                                                      round(prec, 2),
                                                                                      round(recall, 2), f1))
                     if f1 > bestf1:
                         bestf1 = f1
                         wait = 0
-                        chkpt.save(sess, os.path.join(OUTDIR, 'savedmodels',
-                                                      'model_{}_{}'.format(FLAGS.function, start_date)),
+                        chkpt.save(sess, os.path.join(FLAGS.outputdir, 'savedmodels',
+                                                      'model_{}_{}'.format(FLAGS.function, int(time.time()))),
                                    global_step=step, write_meta_graph=metagraphFlag)
                         metagraphFlag = False
 
@@ -143,6 +146,8 @@ def main(argv):
                         if wait > maxwait:
                             log.info('f1 didnt improve for last {} validation steps, so stopping')
                             break
+
+                step += 1
 
             valid_dataiter.reset()
             train_iter.reset()

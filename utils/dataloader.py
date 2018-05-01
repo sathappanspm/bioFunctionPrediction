@@ -28,8 +28,15 @@ import pandas as pd
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 log = logging.getLogger('DataLoader')
 
-
 DATADIR = os.path.join(os.path.dirname(__file__), '../resources/')
+
+BIOLOGICAL_PROCESS = 'GO:0008150'
+MOLECULAR_FUNCTION = 'GO:0003674'
+CELLULAR_COMPONENT = 'GO:0005575'
+FUNC_DICT = {'cc': CELLULAR_COMPONENT,
+                'mf': MOLECULAR_FUNCTION,
+                'bp': BIOLOGICAL_PROCESS}
+
 def has_path(a, b, go_dag=None):
     """
     return True if the GODAG has a path from a to b.
@@ -52,11 +59,12 @@ class GODAG(object):
     GOIDS = None
 
     @staticmethod
-    def initialize_idmap(idlist=None, root=None):
+    def initialize_idmap(idlist, root):
         allnodes = set(GODAG.isagraph.nodes)
         if root:
+            root = FUNC_DICT[root]
             allnodes = set(nx.descendants(GODAG.isagraph, root))
-            
+
         if idlist is not None :
             log.info('loading go funcs of len-{}'.format(len(idlist)))
             GODAG.GOIDS = list(set([GODAG.get(id) for id in idlist]))
@@ -66,17 +74,18 @@ class GODAG(object):
         else:
             with open(os.path.join(DATADIR, 'funcCounts.json')) as inpf:
                 funcweights = json.load(inpf)
-                
+
             tmp = sorted(funcweights.items(), reverse=True, key=lambda x: x[1])
             GODAG.idmap = {GODAG.get(tmp[index][0]): index for index in range(len(tmp))}
             goset = allnodes - funcweights.keys()
             GODAG.GOIDS = [item[0] for item in tmp]
             updatedIdlist = GODAG.GOIDS
-        
+
         GODAG.GOIDS += list(goset)
         for id in goset:
             GODAG.idmap[GODAG.get(id)] = len(GODAG.idmap)
-        
+
+        log.info('GO data loaded. Total nodes -{}'.format(len(GODAG.idmap)))
         return updatedIdlist
 
     @staticmethod
@@ -180,7 +189,7 @@ class DataLoader(object):
         else:
             self.tarobj = tarfile.open(filename)
             self.members = self.tarobj.getmembers()
-        
+
         self.openfiles = set()
 
     def getmember(self, member):
@@ -189,19 +198,19 @@ class DataLoader(object):
         """
         if member.name in self.openfiles:
             return self.getmember(self.members[random.randint(0, len(self.members))])
-            
-        self.openfiles.add(member.name)    
+
+        self.openfiles.add(member.name)
         if self.dir:
             fobj = gzip.open(member, 'rt')
         else:
             fobj = gzip.open(self.tarobj.extractfile(member),
                               mode='rt')
-        
+
         return (member.name, fobj)
 
     def getrandom(self):
         return self.getmember(self.members[random.randint(0, len(self.members))])
-    
+
     def close(self):
         if not self.dir:
             self.tarobj.close()
@@ -224,11 +233,11 @@ class DataIterator(object):
         self.featuretype = featuretype
         self.loader = dataloader
         self.ngramsize = ngramsize
-        self.expectedshape = ((self.maxseqlen - self.ngramsize + 1) 
+        self.expectedshape = ((self.maxseqlen - self.ngramsize + 1)
                               if self.featuretype == 'ngrams' else self.maxseqlen)
-        
+
         self.featurefunc = getattr(FeatureExtractor, 'to_{}'.format(featuretype))
-        
+
         if featuretype == 'ngrams':
             self.featureExt = lambda x: self.featurefunc(x, ngram=ngramsize)
             log.info('using ngrams of size {} as feature representation'.format(self.ngramsize))
@@ -249,56 +258,61 @@ class DataIterator(object):
                 continue
 
             desc = json.loads(fastaObj.description.split(' ', 1)[1])
-            funcs = [GODAG.get(func['go_id']) for func in desc['go_ids']
-                     if((func.get('qualifier', '') != 'NOT') and
-                        ((self.functype == '') or
+            try:
+                funcs = [GODAG.get(func['go_id']) for func in desc['go_ids']
+                         if((func.get('qualifier', '') != 'NOT') and
+                         ((self.functype == '') or
                          (self.functype[-1].lower() == func['aspect'].lower()))
-                        )]
+                         )]
 
-            inputs.append(self.featureExt(seq))
-            labels.append(GODAG.to_npy(funcs))
+                labels.append(GODAG.to_npy(funcs))
+                inputs.append(self.featureExt(seq))
+            except Exception as e:
+                log.info('error in loader - {}'.format(str(e)))
+                continue
+
             if len(labels) >= self.batchsize:
-                log.info('sending batch')
                 self.itersize += 1
                 inputs, labels = self._format(inputs, labels)
+                # log.info('sending batch, with labels size-{}'.format(str(labels.shape)))
                 return inputs, labels
 
 
         if self.itersize >= self.maxdatasize:
             raise StopIteration
-        
+
         self.current = (self.current + 1)
         if self.numfiles:
             self.current = self.current % len(self.numfiles)
         else:
             self.fobj[-1].close()
-        
+
         if self.current < len(self.fnames):
             self.loadfile()
-        
+
         if inputs:
             self.itersize += 1
             inputs, labels = self._format(inputs, labels)
         else:
             inputs, labels = self.__next__()
-            
+
         return inputs, labels
 
     def _format(self, inputs, labels):
         inputs, labels = pd.DataFrame(inputs, dtype=np.int32).fillna(0), np.vstack(labels)
-        log.info('{}'.format(str(inputs.shape)))
+        # log.info('{}'.format(str(inputs.shape)))
         if inputs.shape[1] < self.expectedshape:
-            inputs = np.concatenate([inputs.as_matrix(), 
+            inputs = np.concatenate([inputs.as_matrix(),
                                       np.zeros((inputs.shape[0],
                                                 self.expectedshape - inputs.shape[1]))], axis=1)
         return inputs, labels
-    
+
     def loadfile(self):
         flhandler = self.loader.getrandom()
         self.fnames.append(flhandler[0])
         self.fobj.append(flhandler[1])
         log.info('read file - {}'.format(flhandler[0]))
-    
+
     def __iter__(self, inputs=[], labels=[]):
         return self
 
