@@ -99,7 +99,7 @@ class HierarchicalGODecoder(object):
         log.info('done with max merge')
         output = []
         for fn in self.funcs:
-            output.append(self.layers[node])
+            output.append(self.layers[fn])
 
         self.output = tf.concat(output, axis=1)
         log.info('shape of output is {}'.format(self.output.shape))
@@ -120,7 +120,7 @@ class HierarchicalGODecoder(object):
                                      tf.zeros((tf.shape(self.output)[0],
                                               len(godag.GOIDS) - len(self.funcs)))], axis=1)
 
-        # self.precision, self.recall, self.f1score = calc_performance_metrics(self.ys_, self.prediction)
-        # tf.summary.scalar('f1', self.f1score)
+        self.precision, self.recall, self.f1score = calc_performance_metrics(self.ys_, self.prediction)
+        tf.summary.scalar('f1', self.f1score)
         self.summary = tf.summary.merge_all()
         return self

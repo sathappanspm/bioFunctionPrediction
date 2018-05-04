@@ -34,10 +34,12 @@ class CNNEncoder(object):
     def init_variables(self):
         self.xs_ = tf.placeholder(shape=[None, self.inputsize], dtype=tf.int32, name='x_in')
 
+        mask = tf.concat([[0], tf.ones(self.vocab_size - 1)], axis=0)
         # input activation variables
         self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
                                    dtype=tf.float32, initializer=tf.initializers.random_uniform)
 
+        self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
         ## cnn kernel takes in shape [size,  (input channels, output channels)]
         self.cnnkernel = tf.get_variable('kernel', [self.kernelsize, self.embedding_size, self.filternum],
                                          dtype=tf.float32)
