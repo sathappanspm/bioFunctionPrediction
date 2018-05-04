@@ -25,9 +25,11 @@ def calc_performance_metrics(labels, predictions, threshold=0.35):
     precision = tp / (tp + fp + tf.constant(1e-7))
     recall = tp / (tp + fn + tf.constant(1e-7))
     f1 = 2 * (precision * recall) / (precision + recall + tf.constant(1e-7))
-    return tf.reduce_mean(precision), tf.reduce_mean(recall), tf.reduce_mean(f1)
-    # tf.logging.info('precision- {}'.format(tf.reduce_sum(precision)))
-    # return tf.reduce_sum(tp), tf.reduce_sum(fp), tf.reduce_sum(fn)
+    return (
+        tf.reduce_mean(precision, name='precision'),
+        tf.reduce_mean(recall, name='recall'),
+        tf.reduce_mean(f1, name='f1')
+        )
 
 
 class HierarchicalGODecoder(object):
@@ -56,12 +58,8 @@ class HierarchicalGODecoder(object):
 
     def init_variables(self, godag):
         self.ys_ = tf.placeholder(shape=[None, len(godag.GOIDS)],
-                                  dtype=tf.float32, name='ylabel')
+                                  dtype=tf.float32, name='y_out')
         self.layers = {}
-        # if self.root != '':
-        #    if self.root in self.funcs:
-        #        self.funcs.remove(self.root)
-
         queue = deque()
         funcset = set(self.funcs)
         for node in self.funcs:
@@ -87,15 +85,6 @@ class HierarchicalGODecoder(object):
             visited.update(parents)
             queue.extend(parents)
 
-        # for node in self.funcs:
-        #     ancestors = funcset.intersection(godag.get_ancestors(node))
-        #     out = self.layers[node]
-        #     for an in ancestors:
-        #         out = tf.maximum(out, self.layers[an])
-
-        #     self.layers[node] = out
-        #     output.append(self.layers[node])
-
         log.info('done with max merge')
         output = []
         for fn in self.funcs:
@@ -113,12 +102,11 @@ class HierarchicalGODecoder(object):
 
         tf.summary.scalar('loss', self.loss)
         self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
-        # self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         self.train = self.optimizer.minimize(self.loss)
 
         self.prediction = tf.concat([self.output,
                                      tf.zeros((tf.shape(self.output)[0],
-                                              len(godag.GOIDS) - len(self.funcs)))], axis=1)
+                                              len(godag.GOIDS) - len(self.funcs)))], axis=1, name='prediction')
 
         self.precision, self.recall, self.f1score = calc_performance_metrics(self.ys_, self.prediction)
         tf.summary.scalar('f1', self.f1score)

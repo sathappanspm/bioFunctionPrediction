@@ -25,12 +25,12 @@ from models.decoders import HierarchicalGODecoder
 import json
 import logging
 import os
+import numpy as np
+from predict import predict_evaluate
 
-# log = logging.basicConfig(filename='{}.log'.format(__processor__),
-                    # level=logging.DEBUG)
-
+handler = logging.FileHandler('{}.log'.format(__processor__))
 log = logging.getLogger('main')
-
+log.addHandler(handler)
 FLAGS = tf.app.flags.FLAGS
 
 def create_args():
@@ -55,6 +55,11 @@ def create_args():
         'number of train batches'
     )
     tf.app.flags.DEFINE_integer(
+        'testsize',
+        2000,
+        'number of train batches'
+    )
+    tf.app.flags.DEFINE_integer(
         'batchsize',
         128,
         'size of batch'
@@ -64,19 +69,34 @@ def create_args():
         2000,
         'maximum sequence length'
     )
-
     tf.app.flags.DEFINE_integer(
         'validationsize',
         100,
         'number of validation batches to use'
     )
-
     tf.app.flags.DEFINE_integer(
         'num_epochs',
         5,
         'number of epochs'
     )
     return
+
+
+def validate(dataiter, sess, encoder, decoder, summary_writer):
+    step = 0
+    avgPrec, avgRecall, avgF1 = 0, 0, 0
+    for x, y in dataiter:
+        prec, recall, f1, summary = sess.run([decoder.precision, decoder.recall,
+                                              decoder.f1score, decoder.summary],
+                                             feed_dict={decoder.ys_: y, encoder.xs_: x})
+        summary_writer.add_summary(summary, step)
+        avgPrec += prec
+        avgRecall += recall
+        avgF1 += f1
+        step += 1
+
+    dataiter.reset()
+    return (avgPrec / step, avgRecall / step, avgF1 / step)
 
 
 def main(argv):
@@ -87,13 +107,16 @@ def main(argv):
     FeatureExtractor.load(FLAGS.data)
     log.info('Loaded amino acid and ngram mapping data')
 
+    data = DataLoader()
+
     with tf.Session() as sess:
-        data = DataLoader()
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams')
 
+
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
-                                  seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4,
+                                  seqlen=FLAGS.maxseqlen, dataloader=data,
+                                  numfiles=np.floor((FLAGS.trainsize * FLAGS.batchsize) / 250000),
                                   functype=FLAGS.function, featuretype='ngrams')
 
         encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap) + 1, inputsize=train_iter.expectedshape).build()
@@ -108,7 +131,7 @@ def main(argv):
 
         test_writer = tf.summary.FileWriter(FLAGS.outputdir + '/test')
         step = 0
-        maxwait = 4
+        maxwait = 0
         wait = 0
         bestf1 = 0
         metagraphFlag = True
@@ -122,37 +145,39 @@ def main(argv):
                                             feed_dict={decoder.ys_: y, encoder.xs_: x})
                 train_writer.add_summary(summary, step)
                 log.info('step-{}, loss-{}'.format(step, round(loss, 2)))
+                step += 1
 
-                if step % 100 == 0:
-                    log.info('epoch-{}, step-{}, loss-{}'.format(epoch, step, round(loss, 2)))
-                    # prec, recall, f1, summary = sess.run([decoder.precision, decoder.recall,
-                    #                              decoder.f1score, decoder.summary],
-                    #                             feed_dict={decoder.ys_: y, encoder.xs_: x})
-                    #test_writer.add_summary(summary, step)
-                    #f1 = round(f1, 2)
-                    #log.info('step: {} \n precision: {}, recall: {}, f1: {}'.format(step,
-                    #                                                                 round(prec, 2),
-                    #                                                                 round(recall, 2), f1))
-                    #if f1 > bestf1:
-                    #    bestf1 = f1
-                    #    wait = 0
-                    #    chkpt.save(sess, os.path.join(FLAGS.outputdir, 'savedmodels',
-                    #                                  'model_{}_{}'.format(FLAGS.function, int(time.time()))),
-                    #               global_step=step, write_meta_graph=metagraphFlag)
-                    #    metagraphFlag = False
-
-                    #else:
-                    #    wait += 1
-                    #    if wait > maxwait:
-                    #        log.info('f1 didnt improve for last {} validation steps, so stopping')
-                    #        break
+            if True:
+                log.info('beginning validation')
+                prec, recall, f1 = validate(valid_dataiter, sess, encoder, decoder, test_writer)
+                f1 = round(f1, 2)
+                log.info('epoch: {} \n precision: {}, recall: {}, f1: {}'.format(epoch,
+                                                                                 round(prec, 2),
+                                                                                 round(recall, 2), f1))
+                if f1 > (bestf1 + 1e-3):
+                    bestf1 = f1
+                    wait = 0
+                    chkpt.save(sess, os.path.join(FLAGS.outputdir, 'savedmodels',
+                                                    'model_{}_{}_{}'.format(FLAGS.function, step, int(time.time()))),
+                                global_step=step, write_meta_graph=metagraphFlag)
+                    metagraphFlag = False
+                else:
+                    wait += 1
+                    if wait > maxwait:
+                        log.info('f1 didnt improve for last {} validation steps, so stopping'.format(maxwait))
+                        break
 
                 step += 1
 
-            valid_dataiter.reset()
             train_iter.reset()
 
-        data.close()
+    log.info('testing model')
+    test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
+                                 dataloader=data, functype=FLAGS.function, featuretype='ngrams')
+    prec, recall, f1 = predict_evaluate(test_dataiter, os.path.join(FLAGS.outputdir, 'savedmodels'))
+    log.info('test results')
+    log.info('precision: {}, recall: {}, F1: {}'.format(round(prec, 2), round(recall, 2), round(f1, 2)))
+    data.close()
 
 if __name__ == "__main__":
     create_args()

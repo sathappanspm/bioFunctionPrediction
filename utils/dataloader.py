@@ -308,10 +308,11 @@ class DataIterator(object):
             inputs = np.concatenate([inputs.as_matrix(),
                                       np.zeros((inputs.shape[0],
                                                 self.expectedshape - inputs.shape[1]))], axis=1)
-        log.info('batch shape is {}-{}'.format(inputs.shape, labels.shape))
-        log.info('max id is {}'.format(np.max(inputs)))
+        # log.info('batch shape is {}-{}'.format(inputs.shape, labels.shape))
+        # log.info('max id is {}'.format(np.max(inputs)))
         if self.all_labels is False:
             labels = labels[:, :self.numfuncs]
+
         return inputs, labels
 
     def loadfile(self):
@@ -326,6 +327,8 @@ class DataIterator(object):
     def reset(self):
         for fno in range(len(self.fobj)):
             self.fobj[fno].seek(0)
+
+        self.itersize = 0
 
     def close(self):
         for fno in range(len(self.fobj)):
