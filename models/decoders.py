@@ -59,6 +59,7 @@ class HierarchicalGODecoder(object):
     def init_variables(self, godag):
         self.ys_ = tf.placeholder(shape=[None, len(godag.GOIDS)],
                                   dtype=tf.float32, name='y_out')
+        self.threshold = tf.placeholder(shape=(1,), dtype=tf.float32, name='thres')
         self.layers = {}
         queue = deque()
         funcset = set(self.funcs)

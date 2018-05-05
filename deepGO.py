@@ -32,6 +32,8 @@ handler = logging.FileHandler('{}.log'.format(__processor__))
 log = logging.getLogger('main')
 log.addHandler(handler)
 FLAGS = tf.app.flags.FLAGS
+THRESHOLD_RANGE = np.arange(0.1, 0.5, 0.05)
+
 
 def create_args():
     tf.app.flags.DEFINE_string(
@@ -84,12 +86,22 @@ def create_args():
 
 def validate(dataiter, sess, encoder, decoder, summary_writer):
     step = 0
-    avgPrec, avgRecall, avgF1 = 0, 0, 0
+    avgPrec, avgRecall, avgF1 = (np.zeros_like(THRESHOLD_RANGE),
+                                 np.zeros_like(THRESHOLD_RANGE),
+                                 np.zeros_like(THRESHOLD_RANGE)
+                                 )
     for x, y in dataiter:
-        prec, recall, f1, summary = sess.run([decoder.precision, decoder.recall,
-                                              decoder.f1score, decoder.summary],
-                                             feed_dict={decoder.ys_: y, encoder.xs_: x})
-        summary_writer.add_summary(summary, step)
+        prec, recall, f1 = [], [], []
+        for thres in THRESHOLD_RANGE:
+            p, r, f, summary = sess.run([decoder.precision, decoder.recall,
+                                         decoder.f1score, decoder.summary],
+                                         feed_dict={decoder.ys_: y, encoder.xs_: x,
+                                                    decoder.threshold: [thres]})
+            summary_writer.add_summary(summary, step)
+            prec.append(p)
+            recall.append(r)
+            f1.append(f)
+
         avgPrec += prec
         avgRecall += recall
         avgF1 += f1
@@ -97,6 +109,7 @@ def validate(dataiter, sess, encoder, decoder, summary_writer):
 
     dataiter.reset()
     return (avgPrec / step, avgRecall / step, avgF1 / step)
+
 
 
 def main(argv):
@@ -108,7 +121,7 @@ def main(argv):
     log.info('Loaded amino acid and ngram mapping data')
 
     data = DataLoader()
-
+    modelsavename = 'savedmodels_{}'.format(int(time.time()))
     with tf.Session() as sess:
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams')
@@ -134,6 +147,7 @@ def main(argv):
         maxwait = 1
         wait = 0
         bestf1 = 0
+        bestthres = 0
         metagraphFlag = True
         log.info('starting epochs')
         for epoch in range(FLAGS.num_epochs):
@@ -142,7 +156,8 @@ def main(argv):
                     raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
 
                 _, loss, summary = sess.run([decoder.train, decoder.loss, decoder.summary],
-                                            feed_dict={decoder.ys_: y, encoder.xs_: x})
+                                            feed_dict={decoder.ys_: y, encoder.xs_: x,
+                                                       decoder.threshold: [.3]})
                 train_writer.add_summary(summary, step)
                 log.info('step-{}, loss-{}'.format(step, round(loss, 2)))
                 step += 1
@@ -150,15 +165,18 @@ def main(argv):
             if True:
                 log.info('beginning validation')
                 prec, recall, f1 = validate(valid_dataiter, sess, encoder, decoder, test_writer)
-                f1 = round(f1, 2)
+                thres = np.argmax(np.round(f1, 2))
                 log.info('epoch: {} \n precision: {}, recall: {}, f1: {}'.format(epoch,
-                                                                                 round(prec, 2),
-                                                                                 round(recall, 2), f1))
-                if f1 > (bestf1 + 1e-3):
-                    bestf1 = f1
+                                                                                 np.round(prec, 2)[thres],
+                                                                                 np.round(recall, 2)[thres],
+                                                                                 np.round(f1, 2)[thres]))
+                log.info('selected threshold is {}'.format(thres/10 + 0.1))
+                if f1[thres] > (bestf1 + 1e-3):
+                    bestf1 = f1[thres]
+                    bestthres = THRESHOLD_RANGE[thres]
                     wait = 0
-                    chkpt.save(sess, os.path.join(FLAGS.outputdir, 'savedmodels',
-                                                    'model_{}_{}_{}'.format(FLAGS.function, step, int(time.time()))),
+                    chkpt.save(sess, os.path.join(FLAGS.outputdir, modelsavename,
+                                                    'model_{}_{}'.format(FLAGS.function, step)),
                                 global_step=step, write_meta_graph=metagraphFlag)
                     metagraphFlag = False
                 else:
@@ -174,7 +192,7 @@ def main(argv):
     log.info('testing model')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
                                  dataloader=data, functype=FLAGS.function, featuretype='ngrams')
-    prec, recall, f1 = predict_evaluate(test_dataiter, os.path.join(FLAGS.outputdir, 'savedmodels'))
+    prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], os.path.join(FLAGS.outputdir, modelsavename))
     log.info('test results')
     log.info('precision: {}, recall: {}, F1: {}'.format(round(prec, 2), round(recall, 2), round(f1, 2)))
     data.close()

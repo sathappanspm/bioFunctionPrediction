@@ -119,7 +119,7 @@ def main(argv):
     log.info('Loaded amino acid and ngram mapping data')
 
     data = DataLoader()
-    modelsavename = 'savedmodels_{}'.format(int(time.time()))
+    modelsavename = 'savedmodels_{}_{}'.format(__processor__, int(time.time()))
     with tf.Session() as sess:
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
                                       dataloader=data, functype=FLAGS.function, featuretype='onehot')
@@ -145,7 +145,7 @@ def main(argv):
         step = 0
         maxwait = 1
         wait = 0
-        bestf1 = 0
+        bestf1 = -1
         metagraphFlag = True
         log.info('starting epochs')
         for epoch in range(FLAGS.num_epochs):
@@ -168,6 +168,10 @@ def main(argv):
                                                                                  np.round(prec, 2)[thres],
                                                                                  np.round(recall, 2)[thres],
                                                                                  np.round(f1, 2)[thres]))
+                log.info('precision mat {}'.format(str(np.round(prec, 2))))
+                log.info('recall mat {}'.format(str(np.round(recall, 2))))
+                log.info('f1 mat {}'.format(str(np.round(f1, 2))))
+
                 log.info('selected threshold is {}'.format(thres/10 + 0.1))
                 if f1[thres] > (bestf1 + 1e-3):
                     bestf1 = f1[thres]

@@ -220,12 +220,12 @@ class DataIterator(object):
     def __init__(self, batchsize=1,
                  functype='', size=100, seqlen=2000,
                  featuretype='onehot', dataloader=None,
-                 numfiles=None, ngramsize=3, all_labels=True,
+                 numfiles=1, ngramsize=3, all_labels=True,
                  numfuncs=0, **kwargs):
         self.fobj = []
         self.fnames = []
         self.current = 0
-        self.numfiles = None
+        self.numfiles = numfiles
         self.batchsize = batchsize
         self.functype = functype
         self.maxdatasize = size
@@ -236,6 +236,7 @@ class DataIterator(object):
         self.ngramsize = ngramsize
         self.all_labels = all_labels
         self.numfuncs = numfuncs
+        self.stopiter = False
         self.expectedshape = ((self.maxseqlen - self.ngramsize + 1)
                               if self.featuretype == 'ngrams' else self.maxseqlen)
 
@@ -251,7 +252,7 @@ class DataIterator(object):
         if self.fobj == []:
             self.loadfile()
 
-        if self.itersize >= self.maxdatasize:
+        if (self.itersize >= self.maxdatasize) or self.stopiter is True:
             raise StopIteration
 
         inputs, labels = [], []
@@ -284,20 +285,22 @@ class DataIterator(object):
         if self.itersize >= self.maxdatasize:
             raise StopIteration
 
-        self.current = (self.current + 1)
-        if self.numfiles:
-            self.current = self.current % len(self.numfiles)
-        else:
-            self.fobj[-1].close()
-
-        if self.current < len(self.fnames):
+        self.current = (self.current + 1) % (self.numfiles)
+        # if self.numfiles > 1:
+        if self.current > len(self.fnames):
             self.loadfile()
+        else:
+            # Since all files are done processing stop iteration
+            # so set stopiter flag as all lines of a file have been read
+            self.stopiter = True
 
         if inputs:
             self.itersize += 1
             inputs, labels = self._format(inputs, labels)
-        else:
+        elif not self.stopiter:
             inputs, labels = self.__next__()
+        else:
+            raise StopIteration
 
         return inputs, labels
 
@@ -329,6 +332,8 @@ class DataIterator(object):
             self.fobj[fno].seek(0)
 
         self.itersize = 0
+        self.current = 0
+        self.stopiter = False
 
     def close(self):
         for fno in range(len(self.fobj)):

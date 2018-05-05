@@ -173,7 +173,8 @@ class HierarchicalGODecoder(object):
         self.loss = tf.reduce_mean(self.lossfunc(labels=self.ys_[:, :len(self.funcs)], logits=logits))
 
         tf.summary.scalar('loss', self.loss)
-        self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+        # self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         self.train = self.optimizer.minimize(self.loss)
 
         self.prediction = tf.concat([self.output,
