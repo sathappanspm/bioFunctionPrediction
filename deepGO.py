@@ -131,7 +131,7 @@ def main(argv):
 
         test_writer = tf.summary.FileWriter(FLAGS.outputdir + '/test')
         step = 0
-        maxwait = 0
+        maxwait = 1
         wait = 0
         bestf1 = 0
         metagraphFlag = True
