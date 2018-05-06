@@ -20,8 +20,8 @@ import pandas as pd
 import tensorflow as tf
 from utils.dataloader import GODAG, FeatureExtractor
 from utils.dataloader import DataIterator, DataLoader
-from models.encoders import CNNEncoder
-from models.decoders import HierarchicalGODecoder
+# from models.encoders import CNNEncoder
+# from models.decoders import HierarchicalGODecoder
 import json
 import logging
 import os
