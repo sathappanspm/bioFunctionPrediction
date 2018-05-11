@@ -37,6 +37,19 @@ FUNC_DICT = {'cc': CELLULAR_COMPONENT,
                 'mf': MOLECULAR_FUNCTION,
                 'bp': BIOLOGICAL_PROCESS}
 
+
+
+def load_labelembedding(path, goids):
+    from gensim.models import KeyedVectors
+    model = KeyedVectors.load(path)
+    model_worddict = model.wv.index2word
+
+    # reorder the embeddings to follow the same order as goids list
+    neworder = [model.wv.vocab[goid].index for goid in goids]
+    reorderedmat = model.wv.syn0[neworder, :]
+    return np.vstack([np.zeros(reorderedmat.shape[1]), reordermat])
+
+
 def has_path(a, b, go_dag=None):
     """
     return True if the GODAG has a path from a to b.
@@ -121,8 +134,8 @@ class GODAG(object):
         return GODAG.GOIDS[id]
 
     @staticmethod
-    def get(id):
-        return GODAG.alt_id.get(id, id)
+    def get(node):
+        return GODAG.alt_id.get(node, node)
 
     @staticmethod
     def to_npy(funcs):
@@ -221,7 +234,8 @@ class DataIterator(object):
                  functype='', size=100, seqlen=2000,
                  featuretype='onehot', dataloader=None,
                  numfiles=1, ngramsize=3, all_labels=True,
-                 numfuncs=0, **kwargs):
+                 numfuncs=0, onlyLeafNodes=False, limit=None,
+                 **kwargs):
         self.fobj = []
         self.fnames = []
         self.current = 0
@@ -237,6 +251,8 @@ class DataIterator(object):
         self.all_labels = all_labels
         self.numfuncs = numfuncs
         self.stopiter = False
+        self.limit = limit
+        self.onlyLeafNodes = onlyLeafNodes
         self.expectedshape = ((self.maxseqlen - self.ngramsize + 1)
                               if self.featuretype == 'ngrams' else self.maxseqlen)
 
@@ -269,7 +285,15 @@ class DataIterator(object):
                          (self.functype[-1].lower() == func['aspect'].lower()))
                          )]
 
-                labels.append(GODAG.to_npy(funcs))
+                if self.onlyLeafNodes is True:
+                    funcs = GODAG.get_leafnodes(funcs)
+                    if self.limit is not None:
+                        # only predict limit number of functions
+                        funcs = funcs[:self.limit]
+                    labels.append([GODAG.get_id(fn) for fn in funcs])
+                else:
+                    labels.append(GODAG.to_npy(funcs))
+
                 inputs.append(self.featureExt(seq))
             except Exception as e:
                 log.info('error in loader - {}'.format(str(e)))
@@ -280,7 +304,6 @@ class DataIterator(object):
                 inputs, labels = self._format(inputs, labels)
                 # log.info('sending batch, with labels size-{}'.format(str(labels.shape)))
                 return inputs, labels
-
 
         if self.itersize >= self.maxdatasize:
             raise StopIteration
@@ -305,7 +328,12 @@ class DataIterator(object):
         return inputs, labels
 
     def _format(self, inputs, labels):
-        inputs, labels = pd.DataFrame(inputs, dtype=np.int32).fillna(0), np.vstack(labels)
+        inputs = pd.DataFrame(inputs, dtype=np.int32).fillna(0)
+        if isinstance(labels[0], list):
+            labels = pd.DataFrame(labels, dtype=np.int32).fillna(0)
+        else:
+            labels = np.vstack(labels)
+
         # log.info('{}'.format(str(inputs.shape)))
         if inputs.shape[1] < self.expectedshape:
             inputs = np.concatenate([inputs.as_matrix(),
