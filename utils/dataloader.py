@@ -181,7 +181,7 @@ class FeatureExtractor():
 
 
 class DataLoader(object):
-    def __init__(self, filename='/groups/fungcat/datasets/current/fasta/AllSeqsWithGO_expanded.tar'):
+    def __init__(self, filename='/home/sathap1/workspace/bioFunctionPrediction/AllSeqsWithGO_expanded.tar'):
         self.dir = os.path.isdir(filename)
         if self.dir:
             self.tarobj = filename

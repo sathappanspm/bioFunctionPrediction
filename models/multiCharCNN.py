@@ -81,16 +81,17 @@ class MultiCharCNN(object):
 
     def build(self):
         self.init_variables()
-        cnn_inputs = tf.nn.dropout(tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in'), 0.2)
+        #cnn_inputs = tf.nn.dropout(tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in'), 0.2)
+        cnn_inputs = tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in')
 
         cnn3out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, self.cnnkernel3, 1,
-                                               'VALID', data_format='NWC', name='cnn3'))
+                                               'VALID', data_format='NHWC', name='cnn3'))
 
         cnn5out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, self.cnnkernel5, 1,
-                                               'VALID', data_format='NWC', name='cnn5'))
+                                               'VALID', data_format='NHWC', name='cnn5'))
 
         cnn7out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, self.cnnkernel7, 1,
-                                               'VALID', data_format='NWC', name='cnn7'))
+                                               'VALID', data_format='NHWC', name='cnn7'))
 
         m3 = tf.layers.max_pooling1d(cnn3out, self.poolsize, self.poolstride, padding='SAME')
         m5 = tf.layers.max_pooling1d(cnn5out, self.poolsize, self.poolstride, padding='SAME')
