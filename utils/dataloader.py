@@ -24,6 +24,7 @@ import json
 import os
 import sys
 import pandas as pd
+import ipdb
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 log = logging.getLogger('DataLoader')
@@ -41,13 +42,13 @@ FUNC_DICT = {'cc': CELLULAR_COMPONENT,
 
 def load_labelembedding(path, goids):
     from gensim.models import KeyedVectors
-    model = KeyedVectors.load(path)
+    model = KeyedVectors.load_word2vec_format(path)
     model_worddict = model.wv.index2word
 
     # reorder the embeddings to follow the same order as goids list
     neworder = [model.wv.vocab[goid].index for goid in goids]
     reorderedmat = model.wv.syn0[neworder, :]
-    return np.vstack([np.zeros(reorderedmat.shape[1]), reordermat])
+    return (np.vstack([np.zeros(reorderedmat.shape[1]), reorderedmat])).astype(np.float32)
 
 
 def has_path(a, b, go_dag=None):
@@ -58,7 +59,8 @@ def has_path(a, b, go_dag=None):
         if nx.has_path(go_dag, a, b):
             return True
     except Exception as e:
-        log.exception(e)
+        pass
+        # log.exception(e)
 
     return False
 
@@ -87,12 +89,19 @@ class GODAG(object):
         else:
             with open(os.path.join(DATADIR, 'funcCounts.json')) as inpf:
                 funcweights = json.load(inpf)
+                obsolete = set(funcweights.keys()) - allnodes
+                for i in obsolete:
+                    val = funcweights.pop(i)
+                    if i in GODAG.alt_id:
+                        altid = GODAG.get(i)
+                        funcweights[altid] = funcweights.get(altid, 0) + val
 
             tmp = sorted(funcweights.items(), reverse=True, key=lambda x: x[1])
             GODAG.idmap = {GODAG.get(tmp[index][0]): index for index in range(len(tmp))}
             goset = allnodes - funcweights.keys()
             GODAG.GOIDS = [item[0] for item in tmp]
             updatedIdlist = GODAG.GOIDS
+            log.info('len here is {}'.format(len(GODAG.GOIDS)))
 
         GODAG.GOIDS += list(goset)
         for id in goset:
@@ -107,34 +116,64 @@ class GODAG(object):
         function to get only unique paths in GO DAG (children and its ancestors must not be in the list at the same time)
         """
         ulabels = []
+        unravel = False
+        if isinstance(labels[0], str):
+            labels = [labels]
+            unravel = True
+
         for seq in labels:
             uniqset = set(seq)
             for i in seq:
                 ## remove any ancestors present in label set
+                if i not in GODAG.idmap:
+                    ## ignore if node is not in DAG. could be obsolete function
+                    try:
+                        uniqset.remove(i)
+                    except:
+                         pass
+                        #log.info('leaf node error-{}, {}'.format(str(labels), str(uniqset)))
+                    continue
+
                 uniqset.difference_update(nx.ancestors(GODAG.isagraph, i))
 
             ulabels.append(list(uniqset))
+
+        if unravel is True:
+            ulabels = ulabels[0]
 
         return ulabels
 
     @staticmethod
     def get_ancestors(node):
+        if node == 'STOPGO':
+            return []
+
         return nx.ancestors(GODAG.isagraph, GODAG.get(node))
 
     @staticmethod
     def get_children(node):
+        if node == 'STOPGO':
+            return []
         return nx.descendants(GODAG.isagraph, GODAG.get(node))
 
     @staticmethod
     def get_id(node):
+        if node == 'STOPGO':
+            return -1
         return GODAG.idmap[GODAG.get(node)]
 
     @staticmethod
     def id2node(id):
+        if id == -1:
+            return 'STOPGO'
+
         return GODAG.GOIDS[id]
 
     @staticmethod
     def get(node):
+        if node == 'STOPGO':
+            return node
+
         return GODAG.alt_id.get(node, node)
 
     @staticmethod
@@ -145,8 +184,18 @@ class GODAG(object):
         return mat
 
     @staticmethod
-    def get_fullmat(funcs):
-        return np.any(vfunc(GOIDS, funcs), axis=0)
+    def get_fullmat(funcids):
+        funclabels = [GODAG.id2node(i - 1) for i in funcids]
+        return np.any(GODAG.vfunc(np.array(GODAG.GOIDS)[:, np.newaxis], funclabels), axis=0)
+
+
+
+def get_fullhierarchy(node, godag=None):
+    mat = np.zeros(len(godag.GOIDS), dtype=np.bool_)
+    mat[[GODAG.get_id(parent) for parent in GODAG.get_ancestors(GODAG.id2node(node))]] = True
+    return mat
+
+vectorized_getlabelmat = np.vectorize(partial(get_fullhierarchy, godag=GODAG), otypes=[np.bool_], signature='()->(m)')
 
 
 class FeatureExtractor():
@@ -194,7 +243,7 @@ class FeatureExtractor():
 
 
 class DataLoader(object):
-    def __init__(self, filename='/home/sathap1/workspace/bioFunctionPrediction/AllSeqsWithGO_expanded.tar'):
+    def __init__(self, filename='/groups/fungcat/datasets/current/fasta/AllSeqsWithGO_expanded.tar'):
         self.dir = os.path.isdir(filename)
         if self.dir:
             self.tarobj = filename
@@ -290,13 +339,15 @@ class DataIterator(object):
                     if self.limit is not None:
                         # only predict limit number of functions
                         funcs = funcs[:self.limit]
+
                     labels.append([GODAG.get_id(fn) for fn in funcs])
                 else:
                     labels.append(GODAG.to_npy(funcs))
 
                 inputs.append(self.featureExt(seq))
             except Exception as e:
-                log.info('error in loader - {}'.format(str(e)))
+                # ipdb.set_trace()
+                log.exception('error in loader - {}'.format(str(e)))
                 continue
 
             if len(labels) >= self.batchsize:
@@ -330,10 +381,15 @@ class DataIterator(object):
     def _format(self, inputs, labels):
         inputs = pd.DataFrame(inputs, dtype=np.int32).fillna(0)
         if isinstance(labels[0], list):
-            labels = pd.DataFrame(labels, dtype=np.int32).fillna(0)
+            labels = pd.DataFrame(labels, dtype=np.int32).fillna(0, downcast='infer').as_matrix()
+            if labels.shape[1] < 5:
+                diff = 5 - labels.shape[1]
+                labels = np.hstack([labels, np.zeros((labels.shape[0], 1), dtype=np.int32)])
         else:
             labels = np.vstack(labels)
 
+        if labels.shape[1] == 4:
+            ipdb.set_trace()
         # log.info('{}'.format(str(inputs.shape)))
         if inputs.shape[1] < self.expectedshape:
             inputs = np.concatenate([inputs.as_matrix(),

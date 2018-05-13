@@ -13,6 +13,7 @@ __version__ = "0.0.1"
 import tensorflow as tf
 from collections import deque
 import logging
+import numpy as np
 
 
 def calc_performance_metrics(labels, predictions, threshold):
@@ -29,6 +30,23 @@ def calc_performance_metrics(labels, predictions, threshold):
         tf.reduce_mean(recall, name='recall'),
         tf.reduce_mean(f1, name='f1')
         )
+
+
+def numpy_calc_performance_metrics(labels, predictions, threshold):
+    labels = labels.astype(np.bool)
+    predictions = predictions > threshold
+    tp = np.sum(labels & predictions, axis=1)
+    fp = np.sum(~labels & predictions, axis=1)
+    fn = np.sum(labels & ~(predictions), axis=1)
+    precision = tp / (tp + fp + (1e-7))
+    recall = tp / (tp + fn + (1e-7))
+    f1 = 2 * (precision * recall) / (precision + recall +(1e-7))
+    return (
+        np.mean(precision),
+        np.mean(recall),
+        np.mean(f1)
+        )
+
 
 
 def full_eval_matrix(labels, predictions):
