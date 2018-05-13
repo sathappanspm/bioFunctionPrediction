@@ -16,6 +16,7 @@ import logging
 import sys
 sys.path.append('../')
 from utils import calc_performance_metrics
+import ipdb
 
 log = logging.getLogger('RNNDecoder')
 
@@ -28,7 +29,7 @@ class GORNNDecoder(object):
                  'mf': MOLECULAR_FUNCTION,
                  'bp': BIOLOGICAL_PROCESS}
 
-    def __init__(self, inputlayer, labelembedding, GO_MAT, num_negatives=10,
+    def __init__(self, inputlayer, labelembedding, num_negatives=10,
                  learning_rate=0.001,
                  lstm_statesize=256):
         self.inputs = inputlayer
@@ -37,90 +38,104 @@ class GORNNDecoder(object):
         self.label_dimensions = labelembedding.shape[1]
         self.lstm_statesize = lstm_statesize
         self.labelembedding = labelembedding
-        self.GO_MAT = GO_MAT
+        # self.GO_MAT = GO_MAT
 
     def init_variables(self):
         # First 5 leaf GO nodes  for a given sequence is only used.
         # size of ys_ is (batchsize x 5)
         self.ys_ = tf.placeholder(shape=[None, 5],
-                                  dtype=tf.float32, name='y_out')
-
-        # this is just a 1|0 boolean matrix, representing the GO DAG
-        self.adjMat = tf.get_variable(initializer=self.GO_MAT,
-                                      dtype=tf.bool_, name='GO_adj')
+                                  dtype=tf.int32, name='y_out')
 
         # this represents the label embedding, size (GO nodes x labelembeddingsize)
-        self.labelemb = tf.get_variable('labelemb', initializer=self.labelembedding, trainable=False)
+        self.labelemb = tf.get_variable('labelemb', initializer=self.labelembedding, dtype=tf.float32,
+                                        trainable=False)
 
         # self.threshold = tf.placeholder(shape=(1,), dtype=tf.float32, name='thres')
 
         # the negative samples to be used, size (batchsize x number of negatives)
-        self.negsamples = tf.placeholder(shape=[None, self.num_neg_samples])
-        self.lstmcell = tf.contrib.rnn.BasicLSTMCell(self.lstm_statesize, activation=tf.nn.tanh, name='lstmcell')
+        self.negsamples = tf.placeholder(shape=[None, self.num_neg_samples], dtype=tf.int32, name='negsamples')
+        self.lstmcell = tf.contrib.rnn.BasicLSTMCell(self.lstm_statesize, activation=tf.nn.elu,
+                                                     name='lstmcell')
 
         self.output_weights = tf.get_variable('rnn_outputW', shape=[self.lstm_statesize, self.label_dimensions])
         self.output_bias = tf.get_variable('rnnout_bias', shape=[self.label_dimensions])
         self.ytransform = tf.get_variable('ytransform', shape=[self.label_dimensions, self.label_dimensions],
-                                          initializer=tf.initializer.identity)
+                                          initializer=tf.initializers.identity)
 
-    def build(self, godag):
-        self.init_variables(godag)
+    def build(self):
+        self.init_variables()
 
-        yemb = tf.embedding_lookup(self.labelemb, self.ys_, name='yemb')
-        negemb = tf.embedding_lookup(self.labelemb, self.negsamples, name='negemb')
-        rnnout, rnn_final_states = tf.nn.static_rnn(lstmcell, tf.zeros(shape=(tf.shape(self.yemb)[0].value, 5)),
-                                                    initial_state=self.inputs,
-                                                    sequence_length=5
-                                                    )
+        ## batchsize x 5 x labelemb
+        self.yemb = tf.nn.embedding_lookup(self.labelemb, self.ys_, name='yemb')
+
+        ## batchsize x 10 x labelemb
+        self.negemb = tf.nn.embedding_lookup(self.labelemb, self.negsamples, name='negemb')
+        # rnnin = [tf.zeros(shape=(tf.shape(yemb)[0], 1)) for i in range(5)]
+        log.info('input label embedding-{}'.format(self.yemb.get_shape()))
+        log.info('negative sample embedding-{}'.format(self.negemb.get_shape()))
+
+        rnnin = [self.inputs for i in range(5)]
+        rnnout, rnn_final_states = tf.nn.static_rnn(self.lstmcell,
+                                                    rnnin, dtype=tf.float32)
+                                                    #initial_state=self.inputs
+                                                    #)
+        # log.info('rnnout shape {}'.format(rnnout.get_shape()))
         rflat = tf.reshape(rnnout, shape=[-1, self.lstm_statesize])
 
         # batchsize*5 x labeldim
         self.output = tf.nn.l2_normalize(tf.nn.softplus(tf.matmul(rflat,
                                                                   self.output_weights)
                                                         + self.output_bias,
-                                                        name='yhat')
-                                        )
-        transformed_y = tf.nn.l2_normalize(tf.reshape(tf.matmul(yemb, self.ytransform),
-                                                      shape=[-1, self.label_dimensions]),
+                                                        name='yhat'),
+                                         axis=1)
+
+        log.info('final decoder out shape {}'.format(self.output.get_shape()))
+        # ipdb.set_trace()
+        self.transformed_y = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.yemb, shape=[-1, self.label_dimensions]),
+                                                     self.ytransform),
                                            axis=1)
         # batch size*10 x labeldim
-        transformed_negsamples = tf.nn.l2_normalize(tf.reshape(tf.matmul(negemb, self.ytransform),
-                                                               shape=[-1, self.label_dimensions]),
+        self.transformed_negsamples = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.negemb,
+                                                                         shape=[-1, self.label_dimensions]),
+                                                              self.ytransform),
                                                     axis=1)
 
         # batchsize *5 x 1
-        cosinesim_pos = tf.sqrt(tf.reduce_sum(tf.multiply(self.output, transformed_y), axis=1))
+        self.cosinesim_pos = tf.reduce_sum(tf.multiply(self.output, self.transformed_y), axis=1)
 
         # batchsize *5 x batchsize*10
-        cosinesim_neg = tf.sqrt(tf.matmul(self.output, transformed_negsamples.T))
+        self.cosinesim_neg = tf.matmul(self.output, tf.transpose(self.transformed_negsamples))
 
         # batchsize *5 x 1
-        min_neg_dist = tf.reduce_min(cosinesim_neg, axis=1)
+        self.min_neg_dist = tf.reduce_min(self.cosinesim_neg, axis=1)
 
-        self.loss  = tf.reduce_mean(tf.exp(cosinesim_pos) / tf.exp(min_neg_dist))
+        self.loss  = tf.reduce_mean(tf.exp(self.cosinesim_pos, name='posdist') /
+                                    (tf.exp(self.min_neg_dist, name='negdist') + tf.constant(1e-3)),
+                                    name='loss')
 
         tf.summary.scalar('loss', self.loss)
-        self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         self.train = self.optimizer.minimize(self.loss)
 
         self.summary = tf.summary.merge_all()
-        self.predictions, self.precision, self.recall, self.f1 = self.make_prediction()
+        # self.predictions, self.precision, self.recall, self.f1 = self.make_prediction()
+        self.predictions = self.make_prediction()
         return self
 
     def make_prediction(self):
         # make unit-vectors, size (GO nodes x embeddingsize)
-        norm_labelemb = tf.nn.l2_normalize(tf.matmul(self.labelemb, self.ytransform), axis=1)
+        norm_labelemb = tf.nn.l2_normalize(tf.matmul(self.labelemb, self.ytransform), axis=1, name='labelnorm')
 
         # get cosine similarity, size (batchsize*5 x GO nodes)
-        distmat = tf.matmul(self.output, norm_labelemb.T)
+        distmat = tf.matmul(self.output, tf.transpose(norm_labelemb), name='pred_dist')
 
         # boolean matrix of size batchsize x GOlen
-        pred_labels = tf.nn.embedding_lookup(self.adjMat, tf.reshape(tf.argmin(distmat, axis=1), shape=[-1, 5]))
+        pred_labels = tf.reshape(tf.argmin(distmat, axis=1), shape=[-1, 5])
 
         #truelabels
-        true_labels = tf.nn.embedding_lookup(self.adjMat, self.ys_)
-        precision, recall, f1 = calc_performance_metrics(pred_labels, true_labels, threshold=0.2)
-        return pred_labels, precision, recall, f1
+        # true_labels = GODAG.vfunc(tf.reshape(self.ys_, ))
+        # precision, recall, f1 = calc_performance_metrics(pred_labels, true_labels, threshold=0.2)
+        return pred_labels
 
 
 
