@@ -13,8 +13,12 @@ __version__ = "0.0.1"
 import tensorflow as tf
 from collections import deque
 import logging
+import sys
+sys.path.append('../')
+from utils import variable_summaries
 
 log = logging.getLogger('Decoder')
+
 
 def calc_performance_metrics(labels, predictions, threshold=0.35):
     labels = tf.cast(labels, tf.bool)
@@ -54,7 +58,7 @@ class HierarchicalGODecoder(object):
         name = node.split(':')[1]
         var = tf.get_variable(name, shape=[self.inputs.shape[-1], 1], dtype=tf.float32)
         bias = tf.get_variable('{}_b'.format(name), shape=[1], dtype=tf.float32)
-        return tf.sigmoid(tf.matmul(self.inputs, var) + bias, name='{}_out'.format(name))
+        return tf.nn.sigmoid(tf.matmul(self.inputs, var) + bias, name='{}_out'.format(name))
 
     def init_variables(self, godag):
         self.ys_ = tf.placeholder(shape=[None, len(godag.GOIDS)],
@@ -92,22 +96,32 @@ class HierarchicalGODecoder(object):
             output.append(self.layers[fn])
 
         self.output = tf.concat(output, axis=1)
+        variable_summaries(self.output)
         log.info('shape of output is {}'.format(self.output.shape))
         return
 
     def build(self, godag):
         self.init_variables(godag)
         clippedout = tf.clip_by_value(self.output, tf.constant(1e-7), 1 - tf.constant(1e-7))
+        # clippedout = tf.clip_by_value(self.output, tf.constant(1e-7), 1000)
+        # logits = self.output
         logits = tf.log(clippedout / (1 - clippedout))
-        self.loss = tf.reduce_mean(self.lossfunc(labels=self.ys_[:, :len(self.funcs)], logits=logits))
-        euclideanloss = tf.reduce_mean(tf.square(1 - self.ys_[:, :len(self.funcs)] * self.output))
+        # posmask = tf.cast(self.ys_[:, :len(self.funcs)], tf.bool)
+        loss = tf.reduce_mean(self.lossfunc(labels=self.ys_[:, :len(self.funcs)], logits=logits))
+        self.loss = loss
+        # crossent = self.lossfunc(labels=self.ys_[:, :len(self.funcs)], logits=logits)
+        # possloss = self.ys_[:, :len(self.funcs)] * crossent
+        # negloss = (1 - self.ys_[:, :len(self.funcs)]) * crossent
+        # self.loss = tf.reduce_mean(possloss) + tf.reduce_mean(negloss)
+        # euclideanloss = tf.reduce_mean(tf.square(1 - self.ys_[:, :len(self.funcs)] * self.output))
 
-        self.loss += euclideanloss
+        # self.loss += euclideanloss
         tf.summary.scalar('loss', self.loss)
-        self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+        # self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         self.train = self.optimizer.minimize(self.loss)
 
-        self.prediction = tf.concat([self.output,
+        self.prediction = tf.concat([tf.nn.sigmoid(self.output),
                                      tf.zeros((tf.shape(self.output)[0],
                                               len(godag.GOIDS) - len(self.funcs)))], axis=1, name='prediction')
 

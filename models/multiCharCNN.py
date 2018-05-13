@@ -16,11 +16,14 @@ import logging
 from collections import deque
 from tensorflow.contrib import rnn
 import sys
+from tensorflow.python.client import device_lib
 
 sys.path.append('../')
 from utils import calc_performance_metrics, full_eval_matrix
 
 log = logging.getLogger('multiCNN')
+
+
 
 def calc_performance_metrics(labels, predictions, threshold=0.35):
     labels = tf.cast(labels, tf.bool)
@@ -38,6 +41,13 @@ def calc_performance_metrics(labels, predictions, threshold=0.35):
         )
 
 
+def get_available_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    gpus = [x.name for x in local_device_protos if x.device_type == 'GPU']
+    log.info('identified {} gpus'.format(len(gpus)))
+    return gpus
+
+
 class MultiCharCNN(object):
     def __init__(self, embedding_size=64, vocab_size=24,
                  stride=1, charfilter=32,
@@ -50,6 +60,7 @@ class MultiCharCNN(object):
         self.poolsize = poolsize
         self.poolstride = poolstride
         self.outputs = None
+        self.gpus = get_available_gpus()
 
     def init_variables(self):
         self.xs_ = tf.placeholder(shape=[None, self.inputsize], dtype=tf.int32, name='x_in')
@@ -61,18 +72,6 @@ class MultiCharCNN(object):
 
         self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
 
-        # size 3 k-mer kernel
-        self.cnnkernel3 = tf.get_variable('kernel3', [3, self.embedding_size, self.charfilter],
-                                    dtype=tf.float32)
-
-        # size 5 k-mer kernel
-        self.cnnkernel5 = tf.get_variable('kernel5', [5, self.embedding_size, self.charfilter],
-                                    dtype=tf.float32)
-
-        # size 7 k-mer kernel
-        self.cnnkernel7 = tf.get_variable('kernel7', [7, self.embedding_size, self.charfilter],
-                                    dtype=tf.float32)
-
     def build_biRNN(self, inputx):
         lstm_fw_cell = rnn.BasicLSTMCell(self.rnnhidden, forget_bias=1.0)
         lstm_bw_cell = rnn.BasicLSTMCell(self.rnnhidden, forget_bias=1.0)
@@ -82,21 +81,35 @@ class MultiCharCNN(object):
     def build(self):
         self.init_variables()
         cnn_inputs = tf.nn.dropout(tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in'), 0.2)
-
-        cnn3out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, self.cnnkernel3, 1,
+        alloutput = []
+        # size 3 k-mer kernel
+        with tf.device(self.gpus[len(self.gpus) % 1]):
+            cnnkernel3 = tf.get_variable('kernel3', [3, self.embedding_size, self.charfilter],
+                                              dtype=tf.float32)
+            cnn3out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, cnnkernel3, 1,
                                                'VALID', data_format='NWC', name='cnn3'))
+            m3 = tf.layers.max_pooling1d(cnn3out, self.poolsize, self.poolstride, padding='SAME')
+            alloutput.append(m3)
 
-        cnn5out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, self.cnnkernel5, 1,
-                                               'VALID', data_format='NWC', name='cnn5'))
+        # size 5 k-mer kernel
+        with tf.device(self.gpus[len(self.gpus) % 2]):
+            cnnkernel5 = tf.get_variable('kernel5', [5, self.embedding_size, self.charfilter],
+                                         dtype=tf.float32)
+            cnn5out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, cnnkernel5, 1,
+                                              'VALID', data_format='NWC', name='cnn5'))
+            m5 = tf.layers.max_pooling1d(cnn5out, self.poolsize, self.poolstride, padding='SAME')
+            alloutput.append(m5)
 
-        cnn7out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, self.cnnkernel7, 1,
-                                               'VALID', data_format='NWC', name='cnn7'))
+        # size 7 k-mer kernel
+        with tf.device(self.gpus[len(self.gpus) % 3]):
+            cnnkernel7 = tf.get_variable('kernel7', [7, self.embedding_size, self.charfilter],
+                                              dtype=tf.float32)
+            cnn7out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, cnnkernel7, 1,
+                                              'VALID', data_format='NWC', name='cnn7'))
+            m7 = tf.layers.max_pooling1d(cnn7out, self.poolsize, self.poolstride, padding='SAME')
+            alloutput.append(m7)
 
-        m3 = tf.layers.max_pooling1d(cnn3out, self.poolsize, self.poolstride, padding='SAME')
-        m5 = tf.layers.max_pooling1d(cnn5out, self.poolsize, self.poolstride, padding='SAME')
-        m7 = tf.layers.max_pooling1d(cnn7out, self.poolsize, self.poolstride, padding='SAME')
-
-        self.outputs = tf.concat([m3, m5, m7], axis=1)
+        self.outputs = tf.concat(alloutput, axis=1)
         log.info('shape_encoderout-{}'.format(str((self.outputs.get_shape()))))
         return self
 

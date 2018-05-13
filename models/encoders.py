@@ -13,6 +13,9 @@ __version__ = "0.0.1"
 import tensorflow as tf
 import ipdb
 import logging
+import sys
+sys.path.append('../')
+from utils import variable_summaries
 
 log = logging.getLogger('encoder')
 
@@ -49,7 +52,7 @@ class CNNEncoder(object):
         self.init_variables()
 
         self.cnn_inputs = tf.nn.dropout(tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in'), 0.2)
-        self.cnnout = tf.nn.relu(tf.nn.conv1d(self.cnn_inputs, self.cnnkernel, 1,
+        self.cnnout = tf.nn.elu(tf.nn.conv1d(self.cnn_inputs, self.cnnkernel, 1,
                                               'VALID', data_format='NWC', name='cnn1'))
 
         # log.info('shape-{}'.format(str(tf.shape(self.cnnout))))
@@ -62,11 +65,13 @@ class CNNEncoder(object):
 
         log.info('shape_maxpool-{}'.format(str((self.maxpool.get_shape()))))
 
+        variable_summaries(self.maxpool)
         self.fcweights = tf.get_variable('fc1', shape=[self.maxpool.shape[1],
                                                        self.outputsize],
                                          dtype=tf.float32)
         self.fcbias = tf.get_variable('fcbias', shape=[self.outputsize])
-        self.outputs = tf.nn.relu(tf.matmul(self.maxpool, self.fcweights) + self.fcbias, name='enc_out')
+        self.outputs = tf.nn.elu(tf.matmul(self.maxpool, self.fcweights) + self.fcbias, name='enc_out')
+        variable_summaries(self.outputs)
         log.info('shape_encoderout-{}'.format(str((self.outputs.get_shape()))))
         return self
 
