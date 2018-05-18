@@ -36,8 +36,13 @@ class CNNEncoder(object):
 
         mask = tf.concat([[0], tf.ones(self.vocab_size - 1)], axis=0)
         # input activation variables
+        if hasattr(tf, 'initializers'):
+            initializer = tf.initializers.random_uniform
+        else:
+            initializer = tf.random_uniform_initializer()
+
         self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
-                                   dtype=tf.float32, initializer=tf.initializers.random_uniform)
+                                   dtype=tf.float32, initializer=initializer)
 
         self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
         ## cnn kernel takes in shape [size,  (input channels, output channels)]
@@ -50,19 +55,20 @@ class CNNEncoder(object):
 
         self.cnn_inputs = tf.nn.dropout(tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in'), 0.2)
         self.cnnout = tf.nn.relu(tf.nn.conv1d(self.cnn_inputs, self.cnnkernel, 1,
-                                              'VALID', data_format='NWC', name='cnn1'))
+                                              'VALID', data_format='NHWC', name='cnn1'))
 
         # log.info('shape-{}'.format(str(tf.shape(self.cnnout))))
         self.maxpool = tf.layers.max_pooling1d(self.cnnout, self.poolsize,
                                               self.poolstride, name='maxpool1')
 
         log.info('shape_cnnout-{}'.format(str(self.maxpool.get_shape())))
-        # self.maxpool = tf.reshape(self.maxpool, shape=[tf.shape(self.maxpool)[0], -1])
-        self.maxpool = tf.layers.Flatten()(self.maxpool)
+        #self.maxpool = tf.reshape(self.maxpool, shape=[self.maxpool.get_shape()[0], -1])
+        # self.maxpool = tf.layers.Flatten()(self.maxpool)
+        self.maxpool = tf.contrib.layers.flatten(self.maxpool)
 
         log.info('shape_maxpool-{}'.format(str((self.maxpool.get_shape()))))
 
-        self.fcweights = tf.get_variable('fc1', shape=[self.maxpool.shape[1],
+        self.fcweights = tf.get_variable('fc1', shape=[self.maxpool.get_shape()[1],
                                                        self.outputsize],
                                          dtype=tf.float32)
         self.fcbias = tf.get_variable('fcbias', shape=[self.outputsize])

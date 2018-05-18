@@ -22,27 +22,12 @@ from utils import calc_performance_metrics, full_eval_matrix
 
 log = logging.getLogger('multiCNN')
 
-def calc_performance_metrics(labels, predictions, threshold=0.35):
-    labels = tf.cast(labels, tf.bool)
-    predictions = predictions > threshold
-    tp = tf.reduce_sum(tf.cast(tf.logical_and(labels, predictions), tf.float32), axis=1)
-    fp = tf.reduce_sum(tf.cast(tf.logical_and(tf.logical_not(labels), predictions), tf.float32), axis=1)
-    fn = tf.reduce_sum(tf.cast(tf.logical_and(labels, tf.logical_not(predictions)), tf.float32), axis=1)
-    precision = tp / (tp + fp + tf.constant(1e-7))
-    recall = tp / (tp + fn + tf.constant(1e-7))
-    f1 = 2 * (precision * recall) / (precision + recall + tf.constant(1e-7))
-    return (
-        tf.reduce_mean(precision, name='precision'),
-        tf.reduce_mean(recall, name='recall'),
-        tf.reduce_mean(f1, name='f1')
-        )
-
 
 class MultiCharCNN(object):
     def __init__(self, embedding_size=64, vocab_size=24,
                  stride=1, charfilter=32,
                  inputsize=2000,
-                 poolstride=16, poolsize=16):
+                 poolstride=16, poolsize=16, with_dilation=False):
         self.embedding_size = embedding_size
         self.vocab_size = vocab_size
         self.charfilter = charfilter
@@ -50,14 +35,21 @@ class MultiCharCNN(object):
         self.poolsize = poolsize
         self.poolstride = poolstride
         self.outputs = None
+        self.with_dilation = with_dilation
 
     def init_variables(self):
         self.xs_ = tf.placeholder(shape=[None, self.inputsize], dtype=tf.int32, name='x_in')
 
         mask = tf.concat([[0], tf.ones(self.vocab_size - 1)], axis=0)
+
+        if hasattr(tf, 'initializers'):
+            initializer = tf.initializers.random_uniform
+        else:
+            initializer = tf.random_uniform_initializer()
+
         # input activation variables
         self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
-                                   dtype=tf.float32, initializer=tf.initializers.random_uniform)
+                                   dtype=tf.float32, initializer=initializer)
 
         self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
 
@@ -84,20 +76,45 @@ class MultiCharCNN(object):
         #cnn_inputs = tf.nn.dropout(tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in'), 0.2)
         cnn_inputs = tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in')
 
-        cnn3out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, self.cnnkernel3, 1,
+        # 1998 x 32
+        cnn3out = tf.nn.tanh(tf.nn.conv1d(cnn_inputs, self.cnnkernel3, 1,
                                                'VALID', data_format='NHWC', name='cnn3'))
 
-        cnn5out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, self.cnnkernel5, 1,
+        # 1996 x 32
+        cnn5out = tf.nn.tanh(tf.nn.conv1d(cnn_inputs, self.cnnkernel5, 1,
                                                'VALID', data_format='NHWC', name='cnn5'))
 
-        cnn7out = tf.nn.relu(tf.nn.conv1d(cnn_inputs, self.cnnkernel7, 1,
+        # 1994 x 32
+        cnn7out = tf.nn.tanh(tf.nn.conv1d(cnn_inputs, self.cnnkernel7, 1,
                                                'VALID', data_format='NHWC', name='cnn7'))
+
+        flatten = False
+        if self.with_dilation:
+            log.info('using dilation')
+            cnn3out = tf.nn.tanh(tf.layers.conv1d(cnn3out, self.charfilter,
+                                         64, padding='VALID',
+                                         dilation_rate=2))
+
+            cnn5out = tf.nn.tanh(tf.layers.conv1d(cnn5out, self.charfilter,
+                                         64, padding='VALID',
+                                         dilation_rate=4))
+
+            cnn7out = tf.nn.tanh(tf.layers.conv1d(cnn7out, self.charfilter,
+                                         64, padding='VALID',
+                                         dilation_rate=6))
+            flatten = True
+
+        log.info('cnn3-{}, cnn5-{}, cnn7-{}'.format(cnn3out.get_shape(), cnn5out.get_shape(), cnn7out.get_shape()))
 
         m3 = tf.layers.max_pooling1d(cnn3out, self.poolsize, self.poolstride, padding='SAME')
         m5 = tf.layers.max_pooling1d(cnn5out, self.poolsize, self.poolstride, padding='SAME')
         m7 = tf.layers.max_pooling1d(cnn7out, self.poolsize, self.poolstride, padding='SAME')
 
         self.outputs = tf.concat([m3, m5, m7], axis=1)
+
+        if flatten is True:
+            self.outputs = tf.contrib.layers.flatten(self.outputs)
+
         log.info('shape_encoderout-{}'.format(str((self.outputs.get_shape()))))
         return self
 
@@ -186,7 +203,7 @@ class HierarchicalGODecoder(object):
                                      tf.zeros((tf.shape(self.output)[0],
                                               len(godag.GOIDS) - len(self.funcs)))], axis=1, name='prediction')
 
-        self.precision, self.recall, self.f1score = calc_performance_metrics(self.ys_, self.prediction)
+        self.precision, self.recall, self.f1score = calc_performance_metrics(self.ys_, self.prediction, self.threshold)
         tf.summary.scalar('f1', self.f1score)
         self.summary = tf.summary.merge_all()
         return self

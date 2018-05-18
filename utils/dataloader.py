@@ -27,7 +27,7 @@ import pandas as pd
 import ipdb
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-log = logging.getLogger('DataLoader')
+log = logging.getLogger('root.DataLoader')
 
 DATADIR = os.path.join(os.path.dirname(__file__), '../resources/')
 
@@ -39,15 +39,26 @@ FUNC_DICT = {'cc': CELLULAR_COMPONENT,
                 'bp': BIOLOGICAL_PROCESS}
 
 
+if nx.__version__ == '2.0':
+    filterbyEdgeType = lambda etypes, net: net.edges(keys=etypes)
+else:
+    filterbyEdgeType = lambda etypes, net: [(e[0], e[1]) for e in net.edges(keys=True) if e[2] in etypes]
+
 
 def load_labelembedding(path, goids):
     from gensim.models import KeyedVectors
     model = KeyedVectors.load_word2vec_format(path)
-    model_worddict = model.wv.index2word
+    modelroot = model.wv if hasattr(model, 'wv') else model
+    # try:
+    model_worddict = modelroot.index2word
+    # except AttributeError:
+    #     model_worddict = model.index2word
 
-    # reorder the embeddings to follow the same order as goids list
-    neworder = [model.wv.vocab[goid].index for goid in goids]
-    reorderedmat = model.wv.syn0[neworder, :]
+    ## reorder the embeddings to follow the same order as goids list
+    # neworder = [model.wv.vocab[goid].index for goid in goids]
+    neworder = [modelroot.vocab[goid].index for goid in goids]
+    # reorderedmat = model.wv.syn0[neworder, :]
+    reorderedmat = modelroot.syn0[neworder, :]
     return (np.vstack([np.zeros(reorderedmat.shape[1]), reorderedmat])).astype(np.float32)
 
 
@@ -67,7 +78,7 @@ def has_path(a, b, go_dag=None):
 
 class GODAG(object):
     net = obonet.read_obo(os.path.join(DATADIR, 'go.obo'))
-    isagraph = nx.DiGraph(net.edges(keys=['is_a', 'part-of'])).reverse()
+    isagraph = nx.DiGraph(filterbyEdgeType(['is_a', 'part_of'], net)).reverse()
     vfunc = np.vectorize(partial(has_path, go_dag=isagraph), otypes=[np.bool_])
     alt_id = {val: key for key, vals in nx.get_node_attributes(net, "alt_id").items() for val in vals}
     idmap = None
@@ -75,7 +86,7 @@ class GODAG(object):
 
     @staticmethod
     def initialize_idmap(idlist, root):
-        allnodes = set(GODAG.isagraph.nodes)
+        allnodes = set(GODAG.isagraph.nodes())
         if root:
             root = FUNC_DICT[root]
             allnodes = set(nx.descendants(GODAG.isagraph, root))
@@ -243,7 +254,8 @@ class FeatureExtractor():
 
 
 class DataLoader(object):
-    def __init__(self, filename='/groups/fungcat/datasets/current/fasta/AllSeqsWithGO_expanded.tar'):
+    #def __init__(self, filename='/groups/fungcat/datasets/current/fasta/AllSeqsWithGO_expanded.tar'):
+    def __init__(self, filename='/home/sathap1/workspace/bioFunctionPrediction/AllSeqsWithGO_expanded.tar'):
         self.dir = os.path.isdir(filename)
         if self.dir:
             self.tarobj = filename
@@ -283,7 +295,7 @@ class DataIterator(object):
                  functype='', size=100, seqlen=2000,
                  featuretype='onehot', dataloader=None,
                  numfiles=1, ngramsize=3, all_labels=True,
-                 numfuncs=0, onlyLeafNodes=False, limit=None,
+                 numfuncs=0, onlyLeafNodes=False,
                  **kwargs):
         self.fobj = []
         self.fnames = []
@@ -300,7 +312,6 @@ class DataIterator(object):
         self.all_labels = all_labels
         self.numfuncs = numfuncs
         self.stopiter = False
-        self.limit = limit
         self.onlyLeafNodes = onlyLeafNodes
         self.expectedshape = ((self.maxseqlen - self.ngramsize + 1)
                               if self.featuretype == 'ngrams' else self.maxseqlen)
@@ -336,9 +347,9 @@ class DataIterator(object):
 
                 if self.onlyLeafNodes is True:
                     funcs = GODAG.get_leafnodes(funcs)
-                    if self.limit is not None:
+                    #if self.limit is not None:
                         # only predict limit number of functions
-                        funcs = funcs[:self.limit]
+                        #funcs = funcs[:self.limit]
 
                     labels.append([GODAG.get_id(fn) for fn in funcs])
                 else:
@@ -382,14 +393,13 @@ class DataIterator(object):
         inputs = pd.DataFrame(inputs, dtype=np.int32).fillna(0)
         if isinstance(labels[0], list):
             labels = pd.DataFrame(labels, dtype=np.int32).fillna(0, downcast='infer').as_matrix()
-            if labels.shape[1] < 5:
-                diff = 5 - labels.shape[1]
-                labels = np.hstack([labels, np.zeros((labels.shape[0], 1), dtype=np.int32)])
+            if labels.shape[1] < self.numfuncs:
+                diff = self.numfuncs - labels.shape[1]
+                labels = np.hstack([labels, np.zeros((labels.shape[0], diff), dtype=np.int32)])
+            #log.info('percentage of zeros in labelspace-{}/160'.format((labels==0).sum()))
         else:
             labels = np.vstack(labels)
 
-        if labels.shape[1] == 4:
-            ipdb.set_trace()
         # log.info('{}'.format(str(inputs.shape)))
         if inputs.shape[1] < self.expectedshape:
             inputs = np.concatenate([inputs.as_matrix(),
@@ -397,6 +407,9 @@ class DataIterator(object):
                                                 self.expectedshape - inputs.shape[1]))], axis=1)
         # log.info('batch shape is {}-{}'.format(inputs.shape, labels.shape))
         # log.info('max id is {}'.format(np.max(inputs)))
+        if labels.shape[1] < 10:
+            ipdb.set_trace()
+
         if self.all_labels is False:
             labels = labels[:, :self.numfuncs]
 

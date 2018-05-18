@@ -85,6 +85,12 @@ def create_args():
         5,
         'number of epochs'
     )
+    tf.app.flags.DEFINE_integer(
+        'maxnumfuncs',
+        2,
+        'maximum number of functions'
+    )
+
     return
 
 
@@ -114,7 +120,6 @@ def validate(dataiter, sess, encoder, decoder, summary_writer):
 
 
 def get_negatives(funcs, numNegatives):
-    # ipdb.set_trace()
     funcmat = np.any(vectorized_getlabelmat(funcs), axis=1)
     negatives = np.zeros((funcs.shape[0], numNegatives))
     for row in range(funcmat.shape[0]):
@@ -140,17 +145,17 @@ def main(argv):
         # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                      onlyLeafNodes=True, limit=5)
+                                      onlyLeafNodes=True, limit=FLAGS.maxnumfuncs)
 
 
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
                                   seqlen=FLAGS.maxseqlen, dataloader=data,
                                   numfiles=np.floor((FLAGS.trainsize * FLAGS.batchsize) / 250000),
-                                  functype=FLAGS.function, featuretype='ngrams', onlyLeafNodes=True, limit=5)
+                                  functype=FLAGS.function, featuretype='ngrams', onlyLeafNodes=True, limit=FLAGS.maxnumfuncs)
 
         encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap) + 1, inputsize=train_iter.expectedshape).build()
         log.info('built encoder')
-        decoder = GORNNDecoder(encoder.outputs, labelembedding).build()
+        decoder = GORNNDecoder(encoder.outputs, labelembedding, numfuncs=FLAGS.maxnumfuncs).build()
         log.info('built decoder')
         init = tf.global_variables_initializer()
         init.run(session=sess)
@@ -205,7 +210,7 @@ def main(argv):
     log.info('testing model')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
                                  dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                 onlyLeafNodes=True, limit=5)
+                                 onlyLeafNodes=True, limit=FLAGS.maxnumfuncs)
     prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], os.path.join(FLAGS.outputdir, modelsavename))
     log.info('test results')
     log.info('precision: {}, recall: {}, F1: {}'.format(round(prec, 2), round(recall, 2), round(f1, 2)))
