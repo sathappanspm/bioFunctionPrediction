@@ -15,6 +15,7 @@ __email__ = "sathap1@vt.edu"
 __version__ = "0.0.1"
 __processor__ = 'deepGO'
 
+import logging
 import time
 import pandas as pd
 import tensorflow as tf
@@ -23,12 +24,12 @@ from utils.dataloader import GODAG, FeatureExtractor
 from utils.dataloader import DataIterator, DataLoader
 from models.deepgo import KerasDeepGO
 import json
-import logging
 import os
 from utils import numpy_calc_performance_metrics
 import numpy as np
 import sys
 
+logging.basicConfig(level=logging.INFO)
 strhandler = logging.StreamHandler(sys.stdout)
 log = logging.getLogger('root')
 log.addHandler(strhandler)
@@ -83,14 +84,16 @@ def create_args():
     return
 
 
-def predict_evaluate(test_dataiter, modelpath):
+def predict_evaluate(test_dataiter, model_jsonpath, modelpath):
     avgPrec, avgRecall, avgF1 = (np.zeros_like(THRESHOLD_RANGE),
                                  np.zeros_like(THRESHOLD_RANGE),
                                  np.zeros_like(THRESHOLD_RANGE)
                                  )
     steps = 0
     with tf.Session() as sess:
-        model = keras.models.load_model(modelpath)
+        with open(model_jsonpath) as inf:
+            model = keras.models.model_from_json(inf.read())
+        model.load_weights(modelpath)
         for x, y in test_dataiter:
             prec, recall, f1 = [], [], []
             for thres in THRESHOLD_RANGE:
@@ -121,12 +124,13 @@ def main(argv):
         data = DataLoader()
         log.info('initializing validation data')
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
-                                      dataloader=data, functype=FLAGS.function, featuretype='ngrams', all_labels=False)
+                                      dataloader=data, functype=FLAGS.function, featuretype='ngrams',numfuncs=len(funcs),
+                                      all_labels=False, autoreset=True)
 
         log.info('initializing train data')
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
                                   seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4, numfuncs=len(funcs),
-                                  functype=FLAGS.function, featuretype='ngrams', all_labels=False,)
+                                  functype=FLAGS.function, featuretype='ngrams', all_labels=False, autoreset=True)
 
         model = KerasDeepGO(funcs, FLAGS.function, GODAG, train_iter.expectedshape, len(FeatureExtractor.ngrammap)).build()
         log.info('built encoder')
@@ -137,15 +141,20 @@ def main(argv):
         model_path = FLAGS.outputdir + 'models/model_seq_' + FLAGS.function + '.h5'
         checkpointer = keras.callbacks.ModelCheckpoint(
             filepath=model_path,
-            verbose=1, save_best_only=True)
+            verbose=1, save_best_only=True, save_weights_only=True)
         earlystopper = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, verbose=1)
+
+        model_jsonpath = FLAGS.outputdir + 'models/model_{}.json'.format(FLAGS.function)
+        f = open(model_jsonpath, 'w')
+        f.write(model.to_json())
+        f.close()
 
         model.fit_generator(
             train_iter,
-            steps_per_epoch=int(250112/128),
+            steps_per_epoch=FLAGS.trainsize,
             epochs=5,
             validation_data=valid_dataiter,
-            validation_steps=int(10112/128),
+            validation_steps=FLAGS.validationsize,
             max_queue_size=128,
             callbacks=[checkpointer, earlystopper])
 
@@ -158,7 +167,7 @@ def main(argv):
                                  seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4, numfuncs=len(funcs),
                                  functype=FLAGS.function, featuretype='ngrams', all_labels=True)
 
-    prec, recall, f1 = predict_evaluate(test_dataiter, model_path)
+    prec, recall, f1 = predict_evaluate(test_dataiter, model_jsonpath, model_path)
     log.info('testing error, prec-{}, recall-{}, f1-{}'.format(np.round(prec, 3), np.round(recall, 3), np.round(f1, 3)))
 
 if __name__ == "__main__":

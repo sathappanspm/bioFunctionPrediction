@@ -261,8 +261,8 @@ class FeatureExtractor():
 
 
 class DataLoader(object):
-    #def __init__(self, filename='/groups/fungcat/datasets/current/fasta/AllSeqsWithGO_expanded.tar'):
-    def __init__(self, filename='/home/sathap1/workspace/bioFunctionPrediction/AllSeqsWithGO_expanded.tar'):
+    def __init__(self, filename='/groups/fungcat/datasets/current/fasta/AllSeqsWithGO_expanded.tar'):
+    # def __init__(self, filename='/home/sathap1/workspace/bioFunctionPrediction/AllSeqsWithGO_expanded.tar'):
         self.dir = os.path.isdir(filename)
         if self.dir:
             self.tarobj = filename
@@ -303,7 +303,7 @@ class DataIterator(object):
                  functype='', size=100, seqlen=2000,
                  featuretype='onehot', dataloader=None,
                  numfiles=1, ngramsize=3, all_labels=True,
-                 numfuncs=0, onlyLeafNodes=False,
+                 numfuncs=0, onlyLeafNodes=False, autoreset=False,
                  **kwargs):
         self.fobj = []
         self.fnames = []
@@ -321,6 +321,7 @@ class DataIterator(object):
         self.numfuncs = numfuncs
         self.stopiter = False
         self.onlyLeafNodes = onlyLeafNodes
+        self.autoreset = autoreset
         log.info('only leaf nodes will be used as labels - {}'.format(onlyLeafNodes))
         self.expectedshape = ((self.maxseqlen - self.ngramsize + 1)
                               if self.featuretype == 'ngrams' else self.maxseqlen)
@@ -338,8 +339,10 @@ class DataIterator(object):
             self.loadfile()
 
         if (self.itersize >= self.maxdatasize) or self.stopiter is True:
-            log.info('itersize-{}, size-{}, stop-{}'.format(self.itersize, self.maxdatasize, self.stopiter))
-            raise StopIteration
+            if self.autoreset is True:
+                self.reset()
+            else:
+                raise StopIteration
 
         inputs, labels = [], []
         for fastaObj in SeqIO.parse(self.fobj[self.current], 'fasta'):
@@ -378,7 +381,10 @@ class DataIterator(object):
                 return inputs, labels
 
         if self.itersize >= self.maxdatasize:
-            raise StopIteration
+            if self.autoreset is True:
+                self.reset()
+            else:
+                raise StopIteration
 
         self.current = (self.current + 1) % (self.numfiles)
         # if self.numfiles > 1:
