@@ -30,7 +30,7 @@
 #   p100_dev_q      for development/debugging jobs on P100 GPU nodes. These jobs must be short but can be large.
 # For more on queues as policies, see http://www.arc.vt.edu/newriver#policy
 
-#PBS -q p100_dev_q
+#PBS -q p100_normal_q
 
 #### Account ####
 # This determines which allocation this job's CPU hours are billed to.

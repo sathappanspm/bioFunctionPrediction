@@ -118,7 +118,7 @@ def create_args():
 
 
 def evaluate(predictions, labels, action=None):
-    ipdb.set_trace()
+    #ipdb.set_trace()
     labelmat = np.any(vectorized_getlabelmat(labels), axis=1)
     predmat = np.any(vectorized_getlabelmat(predictions), axis=1)
     return numpy_calc_performance_metrics(labelmat, predmat, threshold=0.2)
@@ -136,18 +136,19 @@ def predict_evaluate(dataiter, modelpath):
         tf_x, tf_y = graph.get_tensor_by_name('x_in:0'), graph.get_tensor_by_name('y_out:0')
         tf_neg = graph.get_tensor_by_name('negsamples:0')
         tf_training = graph.get_tensor_by_name('trainingFlag:0')
-        metrics = [graph.get_tensor_by_name('predictions:0')]
+        metrics = [graph.get_tensor_by_name('predictions:0'), graph.get_tensor_by_name('pred_dist:0')]
+                   #graph.get_tensor_by_name('action:0')]
         log.info('starting prediction')
         step = 0
         for x, y in dataiter:
             if x.shape[0] != y.shape[0]:
                 raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
 
-            #ipdb.set_trace()
             predictions = sess.run(metrics, feed_dict={tf_y: y[:, :FLAGS.maxnumfuncs], tf_x: x,
                                                        tf_neg: np.zeros((x.shape[0], 10)),
                                                        tf_training: [False]}
                                     )
+            ipdb.set_trace()
             prec, recall, f1 = evaluate(predictions[0], y)
             avgPrec += prec
             avgRecall += recall
@@ -194,9 +195,19 @@ def main(argv):
     goids = GODAG.initialize_idmap(None, None)
 
     labelembedding = load_labelembedding(os.path.join(FLAGS.resources, 'goEmbeddings.txt'), goids)
-    assert(labelembedding.shape[0] == (len(goids) + 1)) , 'label embeddings and known go ids differ'
+    assert(labelembedding.shape[0] == (len(goids))) , 'label embeddings and known go ids differ'
 
+    ## Add a row of zeros to refer to NOGO or STOPGO
+    labelembedding = np.vstack([np.zeros(labelembedding.shape[1]), labelembedding]).astype(np.float32)
     labelembeddingsize = labelembedding.shape[1]
+
+    # shift all goids by 1, to allow STOPGO
+    GODAG.idmap = {key: (val + 1) for key, val in GODAG.idmap.items()}
+    log.info('min go index - {}'.format(min(list(GODAG.idmap.values()))))
+    GODAG.idmap['STOPGO'] = 0
+    GODAG.GOIDS.insert(0, 'STOPGO')
+    log.info('first from main-{}, from goids-{},  from idmap-{}, by reversemap-{}'.format(goids[0], GODAG.GOIDS[1], GODAG.id2node(1), GODAG.get_id(goids[0])))
+
     FeatureExtractor.load(FLAGS.resources)
     log.info('Loaded amino acid and ngram mapping data')
 
