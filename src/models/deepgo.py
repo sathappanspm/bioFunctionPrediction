@@ -24,17 +24,20 @@ from collections import deque
 # from keras.layers.embeddings import Embedding
 # from keras.layers.convolutional import (
 #     Convolution1D, MaxPooling1D)
+
+log = logging.getLogger('root.deepgo')
+
 BIOLOGICAL_PROCESS = 'GO:0008150'
 MOLECULAR_FUNCTION = 'GO:0003674'
-CELLULAR_COMPONENT = 'GO:0005575'
-FUNC_DICT = {'cc': CELLULAR_COMPONENT,
-                'mf': MOLECULAR_FUNCTION,
-                'bp': BIOLOGICAL_PROCESS}
-
+#CELLULAR_COMPONENT = 'GO:0005575'
+FUNC_DICT = { #'cc': CELLULAR_COMPONENT,
+              'mf': MOLECULAR_FUNCTION,
+              'bp': BIOLOGICAL_PROCESS}
 
 
 class KerasDeepGO(object):
-    def __init__(self, functions, root, godag, maxlen, ngramsize):
+    def __init__(self, functions, root,
+                 godag, maxlen, ngramsize, pretrained_embedding=None):
         self.functions = functions
         self.root = root
         self.godag = godag
@@ -43,16 +46,39 @@ class KerasDeepGO(object):
         self.maxlen = maxlen
         self.func_set = set(functions)
         self.ngramsize = ngramsize
+        self.pretrained_embedding = pretrained_embedding
+        if self.pretrained_embedding is not None:
+            self.embedding_size = self.pretrained_embedding.shape[1]
+        else:
+            self.embedding_size = embedding_size
+        self.pretrain_init = lambda shape, dtype=None, partition_info=None: self.pretrained_embedding
 
     def get_feature_model(self):
         embedding_dims = 128
         max_features = self.ngramsize
         model = keras.models.Sequential()
-        model.add(keras.layers.Embedding(
-            max_features,
-            embedding_dims,
-            input_length=self.maxlen
-        )) #dropout=0.2))
+        if self.pretrained_embedding is None:
+            model.add(keras.layers.Embedding(
+                      max_features,
+                      embedding_dims,
+                      input_length=self.maxlen
+                      )) #dropout=0.2))
+        else:
+            log.info('using pretrained embedding')
+            model.add(keras.layers.Embedding(
+                      self.pretrained_embedding.shape[0],
+                      self.pretrained_embedding.shape[1],
+                      input_length=self.maxlen,
+                      embeddings_initializer=self.pretrain_init,
+                      trainable=False
+                    )) #dropout=0.2))
+
+            #self.emb = tf.get_variable('emb', dtype=tf.float32, initializer=self.pretrained_embedding,
+            #                           trainable=False)
+            #mask = tf.concat([[0], tf.ones(self.pretrained_embedding.shape[0])], axis=0)
+            #self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
+            #cnn_inputs = tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in')
+
         model.add(keras.layers.Convolution1D(
             filters=32,
             kernel_size=128,
@@ -64,6 +90,7 @@ class KerasDeepGO(object):
         return model
 
     def get_node_name(self, go_id, unique=False):
+        #log.info('name-{}'.format(go_id))
         name = go_id.split(':')[1]
         return name
 
@@ -81,15 +108,17 @@ class KerasDeepGO(object):
         if self.root == '':
             for fn in FUNC_DICT:
                 layers[FUNC_DICT[fn]] = {'net': inputs}
+                q.append((FUNC_DICT[fn], inputs))
         # else:
             # layers[FUNC_DICT[self.root]] = {'net': inputs}
 
-        for fn in [FUNC_DICT[self.root]]:
-            for node_id in self.godag.isagraph.successors(fn):
-                if node_id in self.func_set:
-                    q.append((node_id, inputs))
+        else:
+            for fn in [FUNC_DICT[self.root]]:
+                for node_id in self.godag.isagraph.successors(fn):
+                    if node_id in self.func_set:
+                        q.append((node_id, inputs))
 
-        logging.info('creating tree')
+        log.info('creating tree')
         while len(q) > 0:
             node_id, net = q.popleft()
             parent_nets = [inputs]
@@ -106,7 +135,7 @@ class KerasDeepGO(object):
                         if ok:
                             q.append((n_id, net))
 
-        logging.info('finished tree, layers-{}, functions-{}'.format(len(layers), len(self.functions)))
+        log.info('finished tree, layers-{}, functions-{}'.format(len(layers), len(self.functions)))
         for node_id in self.functions:
             childs = set(self.godag.isagraph.successors(node_id)).intersection(self.func_set)
             if node_id not in layers:
@@ -126,12 +155,13 @@ class KerasDeepGO(object):
                 name = self.get_node_name(node_id) + '_max'
                 layers[node_id]['output'] = keras.layers.maximum(outputs)
 
-        logging.info('tree len {}'.format(len(layers)))
+        log.info('tree len {}'.format(len(layers)))
         return layers
 
 
     def build(self):
-        logging.info("Building the model")
+        log.info("Building the model")
+        log.info('funtion-{}'.format(self.root))
         inputs = keras.layers.Input(shape=(self.maxlen,), dtype='int32', name='i1')
         feature_model = self.get_feature_model()(inputs)
         net = keras.layers.Dense(1024, activation='relu')(feature_model)
@@ -142,21 +172,23 @@ class KerasDeepGO(object):
             try:
                 output_models.append(layers[self.functions[i]]['output'])
             except:
-                logging.info('function {} not found'.format(functions[i]))
+                print("func deleted")
+                log.info('function {} not found'.format(functions[i]))
                 delete.append(i)
 
+        print("hello how are you")
         for i in delete:
             self.functions.pop(i)
 
         net = keras.layers.concatenate(output_models, axis=1)
         model = keras.models.Model(inputs=inputs, outputs=net)
-        logging.info('Compiling the model')
+        log.info('Compiling the model')
         # optimizer = keras.optimizers.RMSprop()
         optimizer = keras.optimizers.Adam()
 
         model.compile(
             optimizer=optimizer,
             loss='binary_crossentropy')
-        logging.info(
+        log.info(
             'Compilation finished')
         return model

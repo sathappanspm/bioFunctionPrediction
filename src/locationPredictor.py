@@ -35,6 +35,7 @@ import ipdb
 from tensorflow.python import debug as tf_debug
 
 # handler = logging.FileHandler('{}.log'.format(__processor__))
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('root')
 # log.addHandler(handler)
 FLAGS = tf.app.flags.FLAGS
@@ -42,9 +43,14 @@ FLAGS = tf.app.flags.FLAGS
 
 def create_args():
     tf.app.flags.DEFINE_string(
-        'data',
+        'resources',
         './data',
         "path to data")
+
+    tf.app.flags.DEFINE_string(
+        'inputfile',
+        './data',
+        "path to sequence file")
 
     tf.app.flags.DEFINE_string(
         'outputdir',
@@ -96,6 +102,13 @@ def create_args():
         False,
         'flag to switch on label embedding training'
     )
+
+    tf.app.flags.DEFINE_string(
+        'predict',
+        "",
+        'model path to indicate no training'
+    )
+
     tf.app.flags.DEFINE_string(
         'distancefunc',
         'cosine',
@@ -179,99 +192,100 @@ def get_negatives(funcs, numNegatives):
 
 def main(argv):
     goids = GODAG.initialize_idmap(None, None)
-    # GO_MAT = GODAG.get_fullmat(goids)
-    # log.info('GO Matrix shape - {}'.format(GO_MAT.shape))
-    # GO_MAT = np.vstack([np.zeros(GO_MAT.shape[1]), GO_MAT])
-    labelembedding = load_labelembedding(os.path.join(FLAGS.data, 'goEmbeddings.txt'), goids)
+
+    labelembedding = load_labelembedding(os.path.join(FLAGS.resources, 'goEmbeddings.txt'), goids)
     assert(labelembedding.shape[0] == (len(goids) + 1)) , 'label embeddings and known go ids differ'
+
     labelembeddingsize = labelembedding.shape[1]
-    FeatureExtractor.load(FLAGS.data)
+    FeatureExtractor.load(FLAGS.resources)
     log.info('Loaded amino acid and ngram mapping data')
 
-    data = DataLoader()
-    modelsavename = 'savedmodels_{}'.format(int(time.time()))
-    with tf.Session() as sess:
-        # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
-        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
-                                      dataloader=data, functype=FLAGS.function, featuretype='onehot',
-                                      onlyLeafNodes=True, numfuncs=FLAGS.maxnumfuncs)
+    data = DataLoader(filename=FLAGS.inputfile)
+    modelsavename = FLAGS.predict
+    if FLAGS.predict == "":
+        modelsavename = 'savedmodels_{}'.format(int(time.time()))
+        with tf.Session() as sess:
+            # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+            valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
+                                          dataloader=data, functype=FLAGS.function, featuretype='onehot',
+                                          onlyLeafNodes=True, numfuncs=FLAGS.maxnumfuncs)
 
 
-        train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
-                                  seqlen=FLAGS.maxseqlen, dataloader=data,
-                                  numfiles=np.floor((FLAGS.trainsize * FLAGS.batchsize) / 250000),
-                                  functype=FLAGS.function, featuretype='onehot', onlyLeafNodes=True, numfuncs=FLAGS.maxnumfuncs)
+            train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
+                                      seqlen=FLAGS.maxseqlen, dataloader=data,
+                                      numfiles=np.floor((FLAGS.trainsize * FLAGS.batchsize) / 250000),
+                                      functype=FLAGS.function, featuretype='onehot', onlyLeafNodes=True, numfuncs=FLAGS.maxnumfuncs)
 
-        #encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap) + 1, inputsize=train_iter.expectedshape).build()
+            #encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap) + 1, inputsize=train_iter.expectedshape).build()
 
-        encoder = MultiCharCNN(vocab_size=len(FeatureExtractor.aminoacidmap) + 1,
-                               inputsize=train_iter.expectedshape, with_dilation=False, charfilter=8,
-                               poolsize=80, poolstride=48).build()
+            encoder = MultiCharCNN(vocab_size=len(FeatureExtractor.aminoacidmap) + 1,
+                                   inputsize=train_iter.expectedshape, with_dilation=False, charfilter=32,
+                                   poolsize=80, poolstride=48).build()
 
-        log.info('built encoder')
-        decoder = GORNNDecoder(encoder.outputs, labelembedding, numfuncs=FLAGS.maxnumfuncs,
-                               trainlabelEmbedding=FLAGS.trainlabel, distancefunc=FLAGS.distancefunc, godag=GODAG).build()
-        log.info('built decoder')
+            log.info('built encoder')
+            decoder = GORNNDecoder(encoder.outputs, labelembedding, numfuncs=FLAGS.maxnumfuncs,
+                                   trainlabelEmbedding=FLAGS.trainlabel, distancefunc=FLAGS.distancefunc, godag=GODAG).build()
+            log.info('built decoder')
 
-        init = tf.global_variables_initializer()
-        init.run(session=sess)
-        chkpt = tf.train.Saver(max_to_keep=4)
-        train_writer = tf.summary.FileWriter(FLAGS.outputdir + '/train',
-                                          sess.graph)
+            init = tf.global_variables_initializer()
+            init.run(session=sess)
+            chkpt = tf.train.Saver(max_to_keep=4)
+            train_writer = tf.summary.FileWriter(FLAGS.outputdir + '/train',
+                                              sess.graph)
 
-        test_writer = tf.summary.FileWriter(FLAGS.outputdir + '/test')
-        step = 0
-        maxwait = 2
-        wait = 0
-        bestf1 = 0
-        bestthres = 0
-        metagraphFlag = True
-        log.info('starting epochs')
-        log.info('params - trainsize-{}, validsie-{}, rootfunc-{}, batchsize-{}'.format(FLAGS.trainsize, FLAGS.validationsize,
-                                                                                        FLAGS.function, FLAGS.batchsize))
-        for epoch in range(FLAGS.num_epochs):
-            for x, y in train_iter:
-                if x.shape[0] != y.shape[0]:
-                    raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
+            test_writer = tf.summary.FileWriter(FLAGS.outputdir + '/test')
+            step = 0
+            maxwait = 2
+            wait = 0
+            bestf1 = 0
+            bestthres = 0
+            metagraphFlag = True
+            log.info('starting epochs')
+            log.info('params - trainsize-{}, validsie-{}, rootfunc-{}, batchsize-{}'.format(FLAGS.trainsize, FLAGS.validationsize,
+                                                                                            FLAGS.function, FLAGS.batchsize))
+            for epoch in range(FLAGS.num_epochs):
+                for x, y in train_iter:
+                    if x.shape[0] != y.shape[0]:
+                        raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
 
-                negatives = get_negatives(y, 10)
-                _, loss, summary = sess.run([decoder.train, decoder.loss, decoder.summary],
-                                             feed_dict={decoder.ys_: y[:, :FLAGS.maxnumfuncs], encoder.xs_: x,
-                                                decoder.negsamples: negatives, decoder.istraining: [True]})
-                train_writer.add_summary(summary, step)
-                log.info('step-{}, loss-{}'.format(step, round(loss, 2)))
-                step += 1
+                    negatives = get_negatives(y, 10)
+                    _, loss, summary = sess.run([decoder.train, decoder.loss, decoder.summary],
+                                                 feed_dict={decoder.ys_: y[:, :FLAGS.maxnumfuncs], encoder.xs_: x,
+                                                    decoder.negsamples: negatives, decoder.istraining: [True]})
+                    train_writer.add_summary(summary, step)
+                    log.info('step-{}, loss-{}'.format(step, round(loss, 2)))
+                    step += 1
 
-            log.info('beginning validation')
-            prec, recall, f1 = validate(valid_dataiter, sess, encoder, decoder, test_writer)
-            log.info('epoch: {} \n precision: {}, recall: {}, f1: {}'.format(epoch,
-                                                                             np.round(prec, 2),
-                                                                             np.round(recall, 2),
-                                                                             np.round(f1, 2)))
-            if np.round(f1,2) >= (bestf1):
-                bestf1 = np.round(f1,2)
-                wait = 0
-                chkpt.save(sess, os.path.join(FLAGS.outputdir, modelsavename,
-                                                'model_{}_{}'.format(FLAGS.function, step)),
-                            global_step=step, write_meta_graph=metagraphFlag)
-                metagraphFlag = False
-            else:
-                wait += 1
-                if wait > maxwait:
-                    log.info('f1 didnt improve for last {} validation steps, so stopping'.format(maxwait))
-                    break
+                log.info('beginning validation')
+                prec, recall, f1 = validate(valid_dataiter, sess, encoder, decoder, test_writer)
+                log.info('epoch: {} \n precision: {}, recall: {}, f1: {}'.format(epoch,
+                                                                                 np.round(prec, 2),
+                                                                                 np.round(recall, 2),
+                                                                                 np.round(f1, 2)))
+                if np.round(f1,2) >= (bestf1):
+                    bestf1 = np.round(f1,2)
+                    wait = 0
+                    log.info('saving meta graph')
+                    #ipdb.set_trace()
+                    chkpt.save(sess, os.path.join(FLAGS.outputdir, modelsavename,
+                                                    'model_{}_{}'.format(FLAGS.function, step)),
+                                global_step=step, write_meta_graph=metagraphFlag)
+                    metagraphFlag = True
+                else:
+                    wait += 1
+                    if wait > maxwait:
+                        log.info('f1 didnt improve for last {} validation steps, so stopping'.format(maxwait))
+                        break
+
+                train_iter.reset()
+                prec, recall, f1 = validate(train_iter, sess, encoder, decoder, None)
+                log.info('training error,epoch-{}, precision: {}, recall: {}, f1: {}'.format(epoch,
+                                                                                             np.round(prec, 2),
+                                                                                             np.round(recall, 2),
+                                                                                             np.round(f1, 2)))
 
 
-            train_iter.reset()
-
-            prec, recall, f1 = validate(train_iter, sess, encoder, decoder, None)
-            log.info('training error,epoch-{}, precision: {}, recall: {}, f1: {}'.format(epoch,
-                                                                                         np.round(prec, 2),
-                                                                                         np.round(recall, 2),
-                                                                                         np.round(f1, 2)))
-
-
-            train_iter.reset()
+                train_iter.reset()
 
     log.info('testing model')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,

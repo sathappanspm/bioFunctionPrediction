@@ -19,7 +19,7 @@ import time
 import pandas as pd
 import tensorflow as tf
 from utils.dataloader import GODAG, FeatureExtractor
-from utils.dataloader import DataIterator, DataLoader
+from utils.dataloader import DataIterator, DataLoader, load_pretrained_embedding
 from models.multiCharCNN import MultiCharCNN, HierarchicalGODecoder
 import json
 import logging
@@ -27,18 +27,17 @@ import os
 import numpy as np
 from predict import predict_evaluate
 
-handler = logging.FileHandler('{}.log'.format(__processor__))
-log = logging.getLogger('main')
-log.addHandler(handler)
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger('root')
 FLAGS = tf.app.flags.FLAGS
 THRESHOLD_RANGE = np.arange(0.1, 0.5, 0.05)
 
 
 def create_args():
     tf.app.flags.DEFINE_string(
-        'data',
-        './data',
-        "path to data")
+        'resources',
+        './resources',
+        "path to resources directory")
 
     tf.app.flags.DEFINE_string(
         'outputdir',
@@ -80,6 +79,16 @@ def create_args():
         5,
         'number of epochs'
     )
+    tf.app.flags.DEFINE_string(
+        'pretrained',
+        '',
+        'location of pretrained embedding'
+    )
+    tf.app.flags.DEFINE_string(
+        'inputfile',
+        '',
+        'inputfile name'
+    )
     return
 
 
@@ -111,27 +120,41 @@ def validate(dataiter, sess, encoder, decoder, summary_writer):
 
 
 def main(argv):
-    funcs = pd.read_pickle(os.path.join(FLAGS.data, '{}.pkl'.format(FLAGS.function)))['functions'].values
+    funcs = pd.read_pickle(os.path.join(FLAGS.resources, '{}.pkl'.format(FLAGS.function)))['functions'].values
     funcs = GODAG.initialize_idmap(funcs, FLAGS.function)
 
     log.info('GO DAG initialized. Updated function list-{}'.format(len(funcs)))
-    FeatureExtractor.load(FLAGS.data)
+    FeatureExtractor.load(FLAGS.resources)
     log.info('Loaded amino acid and ngram mapping data')
 
-    data = DataLoader()
+    data = DataLoader(filename=FLAGS.inputfile)
     modelsavename = 'savedmodels_{}_{}'.format(__processor__, int(time.time()))
+
+    pretrained = None
+    featuretype = 'onehot'
+    if FLAGS.pretrained != '':
+        log.info('loading pretrained embedding')
+        pretrained, ngrammap = load_pretrained_embedding(FLAGS.pretrained)
+        FeatureExtractor.ngrammap = ngrammap
+        featuretype = 'ngrams'
+
     with tf.Session() as sess:
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
-                                      dataloader=data, functype=FLAGS.function, featuretype='onehot')
+                                      dataloader=data, functype=FLAGS.function, featuretype=featuretype)
 
 
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
                                   seqlen=FLAGS.maxseqlen, dataloader=data,
                                   numfiles=np.floor((FLAGS.trainsize * FLAGS.batchsize) / 250000),
-                                  functype=FLAGS.function, featuretype='onehot')
+                                  functype=FLAGS.function, featuretype=featuretype)
 
-        encoder = MultiCharCNN(vocab_size=len(FeatureExtractor.aminoacidmap) + 1,
-                                 inputsize=train_iter.expectedshape).build()
+        vocabsize = ((len(FeatureExtractor.ngrammap) + 1) if featuretype == 'ngrams' else
+                     (len(FeatureExtractor.aminoacidmap) + 1))
+
+        encoder = MultiCharCNN(vocab_size=vocabsize,
+                               inputsize=train_iter.expectedshape,
+                               pretrained_embedding=pretrained).build()
+
         log.info('built encoder')
         decoder = HierarchicalGODecoder(funcs, encoder.outputs, FLAGS.function).build(GODAG)
         log.info('built decoder')
@@ -180,7 +203,8 @@ def main(argv):
                     chkpt.save(sess, os.path.join(FLAGS.outputdir, modelsavename,
                                                     'model_{}_{}'.format(FLAGS.function, step)),
                                 global_step=step, write_meta_graph=metagraphFlag)
-                    metagraphFlag = False
+                    #metagraphFlag = False
+                    metagraphFlag = True
                 else:
                     wait += 1
                     if wait > maxwait:
@@ -193,7 +217,7 @@ def main(argv):
 
     log.info('testing model')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
-                                 dataloader=data, functype=FLAGS.function, featuretype='onehot')
+                                 dataloader=data, functype=FLAGS.function, featuretype=featuretype)
     prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], os.path.join(FLAGS.outputdir, modelsavename))
     log.info('test results')
     log.info('precision: {}, recall: {}, F1: {}'.format(round(prec, 2), round(recall, 2), round(f1, 2)))

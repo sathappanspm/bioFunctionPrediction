@@ -22,16 +22,16 @@ class LocationDecoder(object):
         if self.cell.built is False:
             self.cell.build(tf.shape(prevloc))
 
-        new_loc, new_h = self.cell.call(prevstate, prevloc)
-        return new_loc, new_h
+        new_h, new_loc = self.cell.call(prevstate, prevloc)
+        return new_h, new_loc
 
     def unroll(self):
         all_hidden = []
         all_loc = []
-        hidden = tf.zeros(shape=[tf.shape(self.encoderout)[0], self.decoderunits.value], dtype=tf.float32)
+        hidden = self.encoderout
         loc = self.init_loc
         for i in range(self.maxtimesteps):
-            loc, hidden = self.step(hidden, loc)
+            hidden, loc = self.step(hidden, loc)
             all_hidden.append(hidden)
             all_loc.append(loc)
 
@@ -100,17 +100,23 @@ class LocationPredictorCell(object):
         # 126x65
         self._locw = tf.get_variable('locw', shape=[self._num_units, self.loc_dim + 1])
         # 64x8
-        self._glimpsetransform = tf.get_variable('glimpseT', shape=[self.loc_dim, self.whh.get_shape()[2]])
+        #self._glimpsetransform = tf.get_variable('glimpseT', shape=[self.loc_dim, self.whh.get_shape()[2]])
+        self._glimpsetransform = tf.get_variable('glimpseT', shape=[self.whh.get_shape()[2], self.loc_dim])
         # 8
-        self._glbias = tf.get_variable('glbias', shape=[self.whh.get_shape()[2]])
+        #self._glbias = tf.get_variable('glbias', shape=[self.whh.get_shape()[2]])
         self.built = True
 
     def call(self, state, prevloc):
         """Gated recurrent unit (GRU) with nunits cells."""
         #ipdb.set_trace()
-        glimpse_attention = tf.nn.sigmoid(tf.matmul(prevloc[:, :-1], self._glimpsetransform) + self._glbias)
-        new_glimpse = tf.reduce_sum(tf.multiply(self.whh, tf.expand_dims(glimpse_attention, axis=1)), axis=2)
+        #glimpse_attention = tf.nn.sigmoid(tf.matmul(prevloc[:, :-1], self._glimpsetransform) + self._glbias)
+        #ipdb.set_trace()
+        new_glimpse = tf.nn.tanh(tf.einsum('ijl,il->ij', tf.einsum('ijk,kl -> ijl', state, self._glimpsetransform), prevloc[:, :-1]))
+        #new_glimpse = tf.reduce_sum(tf.multiply(self.whh, tf.expand_dims(glimpse_attention, axis=1)), axis=2)
 
-        new_h = tf.nn.elu(new_glimpse + tf.matmul(state, self._Umat) + self._bias)
-        new_loc = self.activation(tf.matmul(new_h, self._locw))
-        return new_loc, new_h
+        #new_h = tf.nn.elu(new_glimpse + tf.matmul(state, self._Umat) + self._bias)
+        new_loc = self.activation(tf.matmul(new_glimpse, self._locw))
+        forgetInfo = tf.nn.sigmoid(tf.matmul(new_glimpse, self._Umat) + self._bias)
+
+        new_state = tf.multiply(state, tf.expand_dims(forgetInfo, 2))
+        return new_state, new_loc

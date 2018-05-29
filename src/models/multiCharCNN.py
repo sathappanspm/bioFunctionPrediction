@@ -26,9 +26,9 @@ log = logging.getLogger('multiCNN')
 class MultiCharCNN(object):
     def __init__(self, embedding_size=64, vocab_size=24,
                  stride=1, charfilter=32,
-                 inputsize=2000,
-                 poolstride=16, poolsize=16, with_dilation=False):
-        self.embedding_size = embedding_size
+                 inputsize=2000, poolstride=16,
+                 poolsize=16, with_dilation=False,
+                 pretrained_embedding=None):
         self.vocab_size = vocab_size
         self.charfilter = charfilter
         self.inputsize = inputsize
@@ -36,6 +36,11 @@ class MultiCharCNN(object):
         self.poolstride = poolstride
         self.outputs = None
         self.with_dilation = with_dilation
+        self.pretrained_embedding = pretrained_embedding
+        if self.pretrained_embedding is not None:
+            self.embedding_size = self.pretrained_embedding.shape[1]
+        else:
+            self.embedding_size = embedding_size
 
     def init_variables(self):
         self.xs_ = tf.placeholder(shape=[None, self.inputsize], dtype=tf.int32, name='x_in')
@@ -48,8 +53,14 @@ class MultiCharCNN(object):
             initializer = tf.random_uniform_initializer()
 
         # input activation variables
-        self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
-                                   dtype=tf.float32, initializer=initializer)
+        if self.pretrained_embedding is None:
+            self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
+                                       dtype=tf.float32, initializer=initializer)
+        else:
+            log.info('model uses pretrained embedding-{}, {}'.format(self.pretrained_embedding.shape,
+                                                                     self.pretrained_embedding.dtype))
+            self.emb = tf.get_variable('emb', dtype=tf.float32, initializer=self.pretrained_embedding,
+                                       trainable=False)
 
         self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
 

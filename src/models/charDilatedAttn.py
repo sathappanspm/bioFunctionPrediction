@@ -17,7 +17,7 @@ from collections import deque
 import sys
 sys.path.append('../')
 from utils import calc_performance_metrics, full_eval_matrix
-log = logging.getLogger('charCNN model')
+log = logging.getLogger('root.charCNN')
 
 # def calc_performance_metrics(labels, predictions, threshold=0.35):
     # labels = tf.cast(labels, tf.bool)
@@ -72,7 +72,7 @@ class CHARCNNEncoder(object):
 
         self.cnn_inputs = tf.nn.dropout(tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in'), 0.2)
         self.cnnout = tf.nn.relu(tf.nn.conv1d(self.cnn_inputs, self.cnnkernel, 1,
-                                              'VALID', data_format='NWC', name='cnn1'))
+                                              'VALID', data_format='NHWC', name='cnn1'))
 
         self.dilatedcnn = tf.nn.relu(tf.layers.conv1d(self.cnnout, self.dilatedfilter,
                                            self.dilatedkernelsize, padding='VALID',

@@ -60,7 +60,16 @@ def load_labelembedding(path, goids):
     neworder = [modelroot.vocab[goid].index for goid in goids]
     # reorderedmat = model.wv.syn0[neworder, :]
     reorderedmat = modelroot.syn0[neworder, :]
-    return (np.vstack([np.zeros(reorderedmat.shape[1]), reorderedmat])).astype(np.float32)
+    return reorderedmat #(np.vstack([np.zeros(reorderedmat.shape[1]), reorderedmat])).astype(np.float32)
+
+
+def load_pretrained_embedding(path):
+    import pandas as pd
+    df = pd.read_csv(path, sep='\t', index_col=0)
+    npmat = df.as_matrix().astype(np.float32)
+    indexmap = {s: (i + 1) for i, s in enumerate(df.index)}
+    npmat = np.concatenate([np.zeros((1, npmat.shape[1]), dtype=np.float32), npmat], axis=0)
+    return npmat, indexmap
 
 
 def has_path(a, b, go_dag=None):
@@ -79,6 +88,11 @@ def has_path(a, b, go_dag=None):
 
 class GODAG(object):
     net = obonet.read_obo(os.path.join(DATADIR, 'go.obo'))
+    obsolete = {}
+    if len(net) == 2:
+        net, obsolete = net
+        obsolete = {item['id']: item.get('replaced_by', '') for item in obsolete}
+
     isagraph = nx.DiGraph(filterbyEdgeType(['is_a', 'part_of'], net)).reverse()
     vfunc = np.vectorize(partial(has_path, go_dag=isagraph), otypes=[np.bool_])
     alt_id = {val: key for key, vals in nx.get_node_attributes(net, "alt_id").items() for val in vals}
@@ -94,7 +108,8 @@ class GODAG(object):
 
         if idlist is not None :
             log.info('loading go funcs of len-{}'.format(len(idlist)))
-            GODAG.GOIDS = list(set([GODAG.get(id) for id in idlist]))
+            # and remove the obsolete go terms from this list
+            GODAG.GOIDS = list(set([GODAG.get(id) for id in idlist]).difference(GODAG.obsolete.keys()))
             updatedIdlist = (GODAG.GOIDS).copy()
             GODAG.idmap = {id: index for index, id in enumerate(GODAG.GOIDS)}
             goset = allnodes - GODAG.idmap.keys()
@@ -109,10 +124,11 @@ class GODAG(object):
                         funcweights[altid] = funcweights.get(altid, 0) + val
 
             tmp = sorted(funcweights.items(), reverse=True, key=lambda x: x[1])
-            GODAG.idmap = {GODAG.get(tmp[index][0]): index for index in range(len(tmp))}
+            # index 0 is reserved for STOPGO
+            GODAG.idmap = {GODAG.get(item[0]): index for index, item in enumerate(tmp)}
             goset = allnodes - funcweights.keys()
             GODAG.GOIDS = [item[0] for item in tmp]
-            updatedIdlist = GODAG.GOIDS
+            updatedIdlist = (GODAG.GOIDS).copy()
             log.info('len here is {}'.format(len(GODAG.GOIDS)))
 
         GODAG.GOIDS += list(goset)
@@ -203,7 +219,7 @@ class GODAG(object):
 
     @staticmethod
     def get_fullmat(funcids):
-        funclabels = [GODAG.id2node(i - 1) for i in funcids]
+        funclabels = [GODAG.id2node(i) for i in funcids]
         return np.any(GODAG.vfunc(np.array(GODAG.GOIDS)[:, np.newaxis], funclabels), axis=0)
 
 
@@ -227,7 +243,9 @@ class FeatureExtractor():
     @staticmethod
     def _ngram2id(ngram):
         if ngram not in FeatureExtractor.ngrammap:
-            FeatureExtractor.ngrammap[ngram] = len(FeatureExtractor.ngrammap) + 1
+            log.info('unable to find {} in known ngrams'.format(ngram))
+            return FeatureExtractor.ngrammap['<unk>']
+            #FeatureExtractor.ngrammap[ngram] = len(FeatureExtractor.ngrammap) + 1
 
         return FeatureExtractor.ngrammap[ngram]
 
@@ -238,7 +256,9 @@ class FeatureExtractor():
     @staticmethod
     def _aminoacid2id(aacid):
         if aacid not in FeatureExtractor.aminoacidmap:
-            FeatureExtractor.aminoacidmap[aacid] = len(FeatureExtractor.aminoacidmap) + 1
+            #FeatureExtractor.aminoacidmap[aacid] = len(FeatureExtractor.aminoacidmap) + 1
+            log.info('unable to find {} in known aminoacids'.format(aacid))
+            aacid = '<unk>'
 
         return FeatureExtractor.aminoacidmap[aacid]
 
@@ -254,10 +274,14 @@ class FeatureExtractor():
     def load(datadir):
         with open(os.path.join(DATADIR, 'aminoacids.txt'), 'r') as inpf:
             FeatureExtractor.aminoacidmap = {key: (index + 1) for index, key in enumerate(json.load(inpf))}
+            FeatureExtractor.aminoacidmap['<unk>'] = len(FeatureExtractor.aminoacidmap)
+            log.info('loaded amino acid map of size-{}'.format(len(FeatureExtractor.aminoacidmap)))
 
         with open(os.path.join(DATADIR, 'ngrams.txt'), 'r') as inpf:
             ngrams = json.load(inpf)
             FeatureExtractor.ngrammap = {key: (index + 1) for index, key in enumerate(ngrams)}
+            FeatureExtractor.ngrammap['<unk>'] = len(FeatureExtractor.ngrammap)
+            log.info('loaded ngram map of size-{}'.format(len(FeatureExtractor.ngrammap)))
 
 
 class DataLoader(object):
@@ -363,8 +387,8 @@ class DataIterator(object):
                     #if self.limit is not None:
                         # only predict limit number of functions
                         #funcs = funcs[:self.limit]
-
-                    labels.append([GODAG.get_id(fn) for fn in funcs])
+                    ids = [GODAG.get_id(fn) for fn in funcs]
+                    labels.append([i for i  in ids  if i != -1])
                 else:
                     labels.append(GODAG.to_npy(funcs))
 

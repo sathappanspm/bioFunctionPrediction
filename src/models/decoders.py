@@ -100,9 +100,9 @@ class HierarchicalGODecoder(object):
         clippedout = tf.clip_by_value(self.output, tf.constant(1e-7), 1 - tf.constant(1e-7))
         logits = tf.log(clippedout / (1 - clippedout))
         self.loss = tf.reduce_mean(self.lossfunc(labels=self.ys_[:, :len(self.funcs)], logits=logits))
-        euclideanloss = tf.reduce_mean(tf.square(1 - self.ys_[:, :len(self.funcs)] * self.output))
+        #euclideanloss = tf.reduce_mean(tf.square(1 - self.ys_[:, :len(self.funcs)] * self.output))
 
-        self.loss += euclideanloss
+        #self.loss += euclideanloss
         tf.summary.scalar('loss', self.loss)
         self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
         self.train = self.optimizer.minimize(self.loss)

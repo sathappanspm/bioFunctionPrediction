@@ -21,7 +21,7 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
 from utils.dataloader import GODAG, FeatureExtractor
-from utils.dataloader import DataIterator, DataLoader
+from utils.dataloader import DataIterator, DataLoader, load_pretrained_embedding
 from models.deepgo import KerasDeepGO
 import json
 import os
@@ -40,9 +40,14 @@ THRESHOLD_RANGE = np.arange(0.1, 0.5, 0.05)
 
 def create_args():
     tf.app.flags.DEFINE_string(
-        'data',
+        'resources',
+        './resources',
+        "path to resources")
+
+    tf.app.flags.DEFINE_string(
+        'inputfile',
         './data',
-        "path to data")
+        "path to sequence input")
 
     tf.app.flags.DEFINE_string(
         'outputdir',
@@ -59,6 +64,13 @@ def create_args():
         2000,
         'number of train batches'
     )
+
+    tf.app.flags.DEFINE_integer(
+        'testsize',
+        2000,
+        'number of train batches'
+    )
+
     tf.app.flags.DEFINE_integer(
         'batchsize',
         128,
@@ -81,6 +93,12 @@ def create_args():
         5,
         'number of epochs'
     )
+
+    tf.app.flags.DEFINE_string(
+        'pretrained',
+        '',
+        'location of pretrained embedding'
+    )
     return
 
 
@@ -89,7 +107,7 @@ def predict_evaluate(test_dataiter, model_jsonpath, modelpath):
                                  np.zeros_like(THRESHOLD_RANGE),
                                  np.zeros_like(THRESHOLD_RANGE)
                                  )
-    steps = 0
+    step = 0
     with tf.Session() as sess:
         with open(model_jsonpath) as inf:
             model = keras.models.model_from_json(inf.read())
@@ -98,7 +116,7 @@ def predict_evaluate(test_dataiter, model_jsonpath, modelpath):
             prec, recall, f1 = [], [], []
             for thres in THRESHOLD_RANGE:
                 preds = model.predict_on_batch(x)
-                preds = np.concat([preds, np.zeros((preds.shape[0], y.shape[1] - preds.shape[1]))])
+                preds = np.concatenate([preds, np.zeros((preds.shape[0], y.shape[1] - preds.shape[1]))], axis=1)
                 p, r, f = numpy_calc_performance_metrics(y, preds, thres)
                 prec.append(p)
                 recall.append(r)
@@ -113,15 +131,22 @@ def predict_evaluate(test_dataiter, model_jsonpath, modelpath):
 
 
 def main(argv):
-    funcs = pd.read_pickle(os.path.join(FLAGS.data, '{}.pkl'.format(FLAGS.function)))['functions'].values
+    funcs = pd.read_pickle(os.path.join(FLAGS.resources, '{}.pkl'.format(FLAGS.function)))['functions'].values
     funcs = GODAG.initialize_idmap(funcs, FLAGS.function)
 
     log.info('GO DAG initialized. Updated function list-{}'.format(len(funcs)))
-    FeatureExtractor.load(FLAGS.data)
+    FeatureExtractor.load(FLAGS.resources)
     log.info('Loaded amino acid and ngram mapping data')
+    pretrained = None
+    featuretype = 'onehot'
+    if FLAGS.pretrained != '':
+        log.info('loading pretrained embedding')
+        pretrained, ngrammap = load_pretrained_embedding(FLAGS.pretrained)
+        FeatureExtractor.ngrammap = ngrammap
+        featuretype = 'ngrams'
 
     with tf.Session() as sess:
-        data = DataLoader()
+        data = DataLoader(filename=FLAGS.inputfile)
         log.info('initializing validation data')
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams',numfuncs=len(funcs),
@@ -132,7 +157,10 @@ def main(argv):
                                   seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4, numfuncs=len(funcs),
                                   functype=FLAGS.function, featuretype='ngrams', all_labels=False, autoreset=True)
 
-        model = KerasDeepGO(funcs, FLAGS.function, GODAG, train_iter.expectedshape, len(FeatureExtractor.ngrammap)).build()
+        vocabsize = ((len(FeatureExtractor.ngrammap) + 1) if featuretype == 'ngrams' else
+                     (len(FeatureExtractor.aminoacidmap) + 1))
+
+        model = KerasDeepGO(funcs, FLAGS.function, GODAG, train_iter.expectedshape, vocabsize, pretrained_embedding=pretrained).build()
         log.info('built encoder')
         log.info('built decoder')
         keras.backend.set_session(sess)
@@ -160,7 +188,6 @@ def main(argv):
 
         valid_dataiter.close()
         train_iter.close()
-        data.close()
 
     log.info('initializing test data')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
@@ -169,6 +196,7 @@ def main(argv):
 
     prec, recall, f1 = predict_evaluate(test_dataiter, model_jsonpath, model_path)
     log.info('testing error, prec-{}, recall-{}, f1-{}'.format(np.round(prec, 3), np.round(recall, 3), np.round(f1, 3)))
+    data.close()
 
 if __name__ == "__main__":
     create_args()

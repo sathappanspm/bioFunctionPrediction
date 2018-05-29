@@ -19,7 +19,8 @@ log = logging.getLogger('encoder')
 class CNNEncoder(object):
     def __init__(self, embedding_size=128, vocab_size=24,
                  stride=1, filternum=32, kernelsize=128, inputsize=2000,
-                 poolstride=32, poolsize=64, outputsize=1024):
+                 poolstride=32, poolsize=64, outputsize=1024,
+                 pretrained_embedding=None):
         self.embedding_size = embedding_size
         self.vocab_size = vocab_size
         self.stride = stride
@@ -29,6 +30,7 @@ class CNNEncoder(object):
         self.poolstride = poolstride
         self.outputsize = outputsize
         self.inputsize = inputsize
+        self.pretrained_embedding = pretrained_embedding
         self.outputs = None
 
     def init_variables(self):
@@ -41,8 +43,13 @@ class CNNEncoder(object):
         else:
             initializer = tf.random_uniform_initializer()
 
-        self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
-                                   dtype=tf.float32, initializer=initializer)
+        if self.pretrained_embedding is None:
+            self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
+                                       dtype=tf.float32, initializer=initializer)
+        else:
+            self.emb = tf.get_variable('emb', [self.vocab_size, self.embedding_size],
+                                       dtype=tf.float32, initializer=self.pretrained_embedding,
+                                       trainable=False)
 
         self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
         ## cnn kernel takes in shape [size,  (input channels, output channels)]

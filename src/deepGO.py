@@ -28,16 +28,21 @@ import os
 import numpy as np
 from predict import predict_evaluate
 
-handler = logging.FileHandler('{}.log'.format(__processor__))
-log = logging.getLogger('main')
-log.addHandler(handler)
+#handler = logging.FileHandler('{}.log'.format(__processor__))
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger('root')
 FLAGS = tf.app.flags.FLAGS
 THRESHOLD_RANGE = np.arange(0.1, 0.5, 0.05)
 
 
 def create_args():
     tf.app.flags.DEFINE_string(
-        'data',
+        'resources',
+        './data',
+        "path to data")
+
+    tf.app.flags.DEFINE_string(
+        'inputfile',
         './data',
         "path to data")
 
@@ -81,6 +86,11 @@ def create_args():
         5,
         'number of epochs'
     )
+    tf.app.flags.DEFINE_string(
+        'pretrained',
+        '',
+        'location of pretrained embedding'
+    )
     return
 
 
@@ -113,15 +123,20 @@ def validate(dataiter, sess, encoder, decoder, summary_writer):
 
 
 def main(argv):
-    funcs = pd.read_pickle(os.path.join(FLAGS.data, '{}.pkl'.format(FLAGS.function)))['functions'].values
+    funcs = pd.read_pickle(os.path.join(FLAGS.resources, '{}.pkl'.format(FLAGS.function)))['functions'].values
     funcs = GODAG.initialize_idmap(funcs, FLAGS.function)
 
     log.info('GO DAG initialized. Updated function list-{}'.format(len(funcs)))
-    FeatureExtractor.load(FLAGS.data)
+    FeatureExtractor.load(FLAGS.resources)
     log.info('Loaded amino acid and ngram mapping data')
 
-    data = DataLoader()
+    data = DataLoader(filename=FLAGS.inputfile)
     modelsavename = 'savedmodels_{}'.format(int(time.time()))
+    pretrained = None
+    if FLAGS.pretrained != '':
+        pretrained, ngrammap = utils.load_pretrained_embedding(FLAGS.pretrained)
+        FeatureExtractor.ngrammap = ngrammap
+
     with tf.Session() as sess:
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams')
@@ -132,7 +147,10 @@ def main(argv):
                                   numfiles=np.floor((FLAGS.trainsize * FLAGS.batchsize) / 250000),
                                   functype=FLAGS.function, featuretype='ngrams')
 
-        encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap) + 1, inputsize=train_iter.expectedshape).build()
+        encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap) + 1,
+                             inputsize=train_iter.expectedshape,
+                             pretrained_embedding=pretrained).build()
+
         log.info('built encoder')
         decoder = HierarchicalGODecoder(funcs, encoder.outputs, FLAGS.function).build(GODAG)
         log.info('built decoder')

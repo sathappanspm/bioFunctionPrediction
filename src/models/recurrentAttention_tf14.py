@@ -89,7 +89,7 @@ class GORNNDecoder(object):
         log.info('after flat-{}'.format(rflat.get_shape()))
 
         predlabels = rflat[:, :-1]
-        self.actionpreds = tf.nn.sigmoid(rflat[:, -1])
+        self.actionpreds = tf.nn.sigmoid(rflat[:, -1], name='action')
 
         log.info('actions-{}, predictions-{}'.format(predlabels.get_shape(),  self.actionpreds.get_shape()))
         #ipdb.set_trace()
@@ -101,10 +101,12 @@ class GORNNDecoder(object):
         self.output = tf.nn.l2_normalize(predlabels, dim=1)
         log.info('final decoder out shape {}'.format(self.output.get_shape()))
         ## ipdb.set_trace()
-        self.transformed_y = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.yemb, shape=[-1, self.label_dimensions]),
-                                                          self.ytransform), dim=1)
-        #self.transformed_y = tf.nn.l2_normalize(self.yemb,
-                                           #dim=1)
+        #self.transformed_y = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.yemb, shape=[-1, self.label_dimensions]),
+                                                          #self.ytransform), dim=1)
+        #ipdb.set_trace()
+        self.transformed_y = tf.nn.l2_normalize(tf.reshape(self.yemb,
+                                                           shape=[-1, self.label_dimensions]),
+                                                dim=1)
 
         #variable_summaries(self.transformed_y)
         # batch size*10 x labeldim
@@ -113,31 +115,37 @@ class GORNNDecoder(object):
                                                               self.ytransform),
                                                     dim=1)
 
+        #self.transformed_negsamples = tf.nn.l2_normalize(tf.reshape(self.negemb,
+        #                                                            shape=[-1, self.label_dimensions]),
+        #                                                 dim=1)
         #variable_summaries(self.ytransform)
         log.info('ty-{}, tneg-{}'.format(self.transformed_y.get_shape(), self.transformed_negsamples.get_shape()))
         if self.distancefunc == 'cosine':
             # batchsize *5 x 1
-            self.pos_dist = tf.reduce_sum(tf.multiply(self.output, self.transformed_y), axis=1)
+            self.pos_dist = tf.abs(tf.reduce_sum(tf.multiply(self.output, self.transformed_y), axis=1))
+            self.labelembloss = -1 * tf.reduce_mean(tf.multiply(actionmask, self.pos_dist), name='loss')
 
             # batchsize *5 x batchsize*10
-            self.neg_dist = tf.matmul(self.output, tf.transpose(self.transformed_negsamples))
+            #self.neg_dist = tf.abs(tf.matmul(self.output, tf.transpose(self.transformed_negsamples)))
 
             # batchsize *5 x 1
         else:
             #ipdb.set_trace()
+            log.info('using euclidean distance')
             self.pos_dist = tf.sqrt(tf.reduce_sum((self.output - self.transformed_y)**2, axis=1))
             self.neg_dist = tf.sqrt(tf.reduce_sum((tf.expand_dims(self.output, axis=1) - self.transformed_negsamples)**2, axis=2))
 
-        log.info('pos_dist-{}, neg_dist-{}'.format(self.pos_dist.get_shape(), self.neg_dist.get_shape()))
-        self.min_neg_dist = tf.reduce_min(self.neg_dist, axis=1)
+            log.info('pos_dist-{}, neg_dist-{}'.format(self.pos_dist.get_shape(), self.neg_dist.get_shape()))
+            self.min_neg_dist = tf.reduce_mean(self.neg_dist, axis=1)
 
-        #ipdb.set_trace()
-        self.labelembloss  = tf.exp(self.pos_dist, name='posdist') / (tf.exp(self.min_neg_dist, name='negdist') + tf.constant(1e-3))
-        self.labelembloss = tf.reduce_mean(tf.multiply(actionmask, self.labelembloss), name='loss')
+            #ipdb.set_trace()
+            self.labelembloss  = tf.exp(self.pos_dist, name='posdist') / (tf.exp(self.min_neg_dist, name='negdist') + tf.constant(1e-7))
+            self.labelembloss = tf.reduce_mean(tf.multiply(actionmask, self.labelembloss), name='loss')
+
         self.loss = self.labelembloss + actionerr
 
         tf.summary.scalar('loss', self.loss)
-        self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+        self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
             self.train = self.optimizer.minimize(self.loss)
@@ -154,12 +162,12 @@ class GORNNDecoder(object):
 
         if self.distancefunc == 'cosine':
             # get cosine similarity, size (batchsize*5 x GO nodes)
-            distmat = tf.matmul(self.output, tf.transpose(norm_labelemb), name='pred_dist')
+            distmat = tf.abs(tf.matmul(self.output, tf.transpose(norm_labelemb)), name='pred_dist')
+            pred_labels = tf.reshape(tf.argmax(distmat, axis=1), shape=[-1, self.numfuncs], name='predictions')
         else:
-            distmat = tf.sqrt(tf.reduce_sum((tf.expand_dims(self.output, axis=1) - norm_labelemb)**2, axis=2))
-
-        # boolean matrix of size batchsize x GOlen
-        pred_labels = tf.reshape(tf.argmin(distmat, axis=1), shape=[-1, self.numfuncs], name='predictions')
+            distmat = tf.sqrt(tf.reduce_sum((tf.expand_dims(self.output, axis=1) - norm_labelemb)**2, axis=2), name='pred_dist')
+            # boolean matrix of size batchsize x GOlen
+            pred_labels = tf.reshape(tf.argmin(distmat, axis=1), shape=[-1, self.numfuncs], name='predictions')
 
         #truelabels
         # true_labels = GODAG.vfunc(tf.reshape(self.ys_, ))
