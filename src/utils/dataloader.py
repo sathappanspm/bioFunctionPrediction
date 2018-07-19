@@ -129,7 +129,6 @@ class GODAG(object):
             goset = allnodes - funcweights.keys()
             GODAG.GOIDS = [item[0] for item in tmp]
             updatedIdlist = (GODAG.GOIDS).copy()
-            log.info('len here is {}'.format(len(GODAG.GOIDS)))
 
         GODAG.GOIDS += list(goset)
         for id in goset:
@@ -238,7 +237,7 @@ class FeatureExtractor():
 
     @staticmethod
     def to_ngrams(seq, ngram=3):
-        return [FeatureExtractor._ngram2id(seq[i: i + ngram]) for i in range(len(seq) -ngram + 1)]
+        return [FeatureExtractor._ngram2id(seq[i: i + ngram]) for i in range(len(seq) - ngram + 1)]
 
     @staticmethod
     def _ngram2id(ngram):
@@ -274,13 +273,13 @@ class FeatureExtractor():
     def load(datadir):
         with open(os.path.join(DATADIR, 'aminoacids.txt'), 'r') as inpf:
             FeatureExtractor.aminoacidmap = {key: (index + 1) for index, key in enumerate(json.load(inpf))}
-            FeatureExtractor.aminoacidmap['<unk>'] = len(FeatureExtractor.aminoacidmap)
+            FeatureExtractor.aminoacidmap['<unk>'] = 0  # len(FeatureExtractor.aminoacidmap)
             log.info('loaded amino acid map of size-{}'.format(len(FeatureExtractor.aminoacidmap)))
 
         with open(os.path.join(DATADIR, 'ngrams.txt'), 'r') as inpf:
             ngrams = json.load(inpf)
             FeatureExtractor.ngrammap = {key: (index + 1) for index, key in enumerate(ngrams)}
-            FeatureExtractor.ngrammap['<unk>'] = len(FeatureExtractor.ngrammap)
+            FeatureExtractor.ngrammap['<unk>'] = 0  # len(FeatureExtractor.ngrammap)
             log.info('loaded ngram map of size-{}'.format(len(FeatureExtractor.ngrammap)))
 
 

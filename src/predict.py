@@ -36,8 +36,8 @@ FLAGS = tf.app.flags.FLAGS
 
 def create_args():
     tf.app.flags.DEFINE_string(
-        'data',
-        './data',
+        'resources',
+        './resources',
         "path to data")
 
     tf.app.flags.DEFINE_string(
@@ -46,9 +46,9 @@ def create_args():
         "path to model")
 
     tf.app.flags.DEFINE_string(
-        'results',
-        './results',
-        "results directory")
+        'inputfile',
+        'seqs.tar',
+        "path to fasta sequence file")
 
     tf.app.flags.DEFINE_string(
         'function',
@@ -71,7 +71,11 @@ def create_args():
         100,
         'number of validation batches to use'
     )
-
+    tf.app.flags.DEFINE_boolean(
+        'evaluate',
+        False,
+        'evaluate the results and output precision, recall'
+    )
     return
 
 
@@ -104,21 +108,58 @@ def predict_evaluate(dataiter, thres, modelpath):
     return avgPrec / step, avgRecall / step, avgF1 / step
 
 
+def print_predictions(predictions, gofuncs):
+    for row in range(predictions.shape[0]):
+        print(dict(zip(gofuncs.GOIDS, predictions[row, :])))
+
+    return
+
+def predict(dataiter, thres, modelpath, gofuncs):
+    with tf.Session() as sess:
+        saver = tf.train.import_meta_graph(glob(os.path.join(modelpath, 'model*meta'))[0])
+        saver.restore(sess, tf.train.latest_checkpoint(modelpath))
+        log.info('restored model')
+        graph = tf.get_default_graph()
+        tf_x, tf_y = graph.get_tensor_by_name('x_in:0'), graph.get_tensor_by_name('y_out:0')
+        tf_thres = graph.get_tensor_by_name('thres:0')
+        prediction_prob = [graph.get_tensor_by_name('prediction:0')]
+        log.info('starting prediction')
+        step = 0
+        for x, _ in dataiter:
+            #if x.shape[0] != y.shape[0]:
+            #    raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
+
+            predictions = sess.run(prediction_prob, feed_dict={tf_y: y, tf_x: x, tf_thres: [thres]})
+            print_predictions(predictions, gofuncs)
+            step += 1
+
+        dataiter.close()
+        log.info('read {} test batches'.format(step))
+    return
+
+
+
 def main(argv):
-    funcs = pd.read_pickle(os.path.join(FLAGS.data, '{}.pkl'.format(FLAGS.function)))['functions'].values
+    log.info('Beginning prediction')
+    funcs = pd.read_pickle(os.path.join(FLAGS.resources, '{}.pkl'.format(FLAGS.function)))['functions'].values
     funcs = GODAG.initialize_idmap(funcs, FLAGS.function)
 
     log.info('GO DAG initialized. Updated function list-{}'.format(len(funcs)))
-    FeatureExtractor.load(FLAGS.data)
+    FeatureExtractor.load(FLAGS.resources)
     log.info('Loaded amino acid and ngram mapping data')
 
-    data = DataLoader()
-    test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
-                                 dataloader=data, functype=FLAGS.function, featuretype='ngrams')
-
-    predict_evaluate(test_dataiter, FLAGS.modelsdir)
-    data.close()
+    data = DataLoader(filename=FLAGS.inputfile)
+    if FLAGS.evaluate:
+        test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
+                                     dataloader=data, functype=FLAGS.function, featuretype='ngrams')
+        predict_evaluate(test_dataiter, 0.2, FLAGS.modelsdir)
+    else:
+        test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
+                                     dataloader=data, functype=FLAGS.function, featuretype='ngrams', test=True)
+        predict(test_dataiter, 0.2, FLAGS.modelsdir, funcs)
 
 if __name__ == "__main__":
     create_args()
     tf.app.run(main)
+    # sample run command
+    ## python predict.py --modelsdir ./savedmodels/deepGo --resources ./resources --testsize 100 -- batchsize 10
