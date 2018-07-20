@@ -171,9 +171,9 @@ def main(argv):
                 if x.shape[0] != y.shape[0]:
                     raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
 
-                _, loss, decout = sess.run([encoder.train, encoder.loss, encoder.dec_output], feed_dict={encoder.xs_: x})
+                _, loss = sess.run([encoder.train, encoder.loss], feed_dict={encoder.xs_: x})
                 # train_writer.add_summary(summary, step)
-                ipdb.set_trace()
+                #ipdb.set_trace()
                 log.info('step-{}, loss-{}'.format(step, round(loss, 2)))
                 step += 1
 

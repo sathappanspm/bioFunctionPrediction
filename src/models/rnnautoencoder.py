@@ -42,7 +42,7 @@ class RNNAutoEncoder(object):
         self.xs_ = tf.placeholder(shape=[None, self.maxlen], dtype=tf.int32, name='x_in')
 
         # shape vocab_size (number of 3-mers)
-        mask = tf.concat([[0], tf.ones(self.vocab_size - 1)], axis=0)
+        mask = tf.concat([[0], tf.ones(self.vocab_size)], axis=0)
 
         ## to handle different tensorflow versions
         if hasattr(tf, 'initializers'):
@@ -55,7 +55,7 @@ class RNNAutoEncoder(object):
             self.emb = tf.get_variable('emb', initializer=self.pretrained_embedding, dtype=tf.float32,
                                        trainable=self.finetune_embedding)
         else:
-            self.emb = tf.get_variable('emb', shape=[self.vocab_size, self.embedding_size])
+            self.emb = tf.get_variable('emb', shape=[self.vocab_size + 1, self.embedding_size])
 
         self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
         self._enc_cell = tf.contrib.rnn.BasicLSTMCell(self.lstm_statesize, activation=tf.nn.elu)
@@ -86,7 +86,7 @@ class RNNAutoEncoder(object):
 
                 dec_output_ = tf.transpose(tf.stack(dec_outputs), [1, 0, 2])
                 dec_weight_ = tf.tile(tf.expand_dims(dec_weight_, 0), [tf.shape(self.xs_)[0], 1, 1])
-                autoencoded_output = tf.sigmoid(tf.matmul(dec_output_, dec_weight_) + dec_bias_)
+                autoencoded_output = (tf.matmul(dec_output_, dec_weight_) + dec_bias_)
             else:
                 dec_state = enc_state
                 dec_input_ = tf.zeros(tf.shape(rnn_input[0]),
@@ -104,17 +104,18 @@ class RNNAutoEncoder(object):
                         + dec_bias_
                     dec_outputs.append(dec_input_)
 
-                autoencoded_output = tf.sigmoid(tf.transpose(tf.stack(dec_outputs), [1,
-                        0, 2]))
+                autoencoded_output = (tf.transpose(tf.stack(dec_outputs), [1, 0, 2]))
 
-        clippedout = tf.clip_by_value(autoencoded_output, tf.constant(1e-7), 1 - tf.constant(1e-7))
-        ae_logits = tf.log(clippedout / (1 - clippedout))
+        finalOut = tf.nn.relu(autoencoded_output)
+        self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.xs_, logits=finalOut))
+        #clippedout = tf.clip_by_value(autoencoded_output, tf.constant(1e-7), 1 - tf.constant(1e-7))
+        #ae_logits = tf.log(clippedout / (1 - clippedout))
 
-        self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                                       labels=tf.one_hot(self.xs_, self.vocab_size),
-                                       logits=ae_logits
-                                       )
-                                    )
+        #self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                                       #labels=tf.one_hot(self.xs_, self.vocab_size),
+                                       #logits=ae_logits
+                                       #)
+                                    #)
         self.optimizer = tf.train.RMSPropOptimizer(learning_rate=1e-3)
         self.train = self.optimizer.minimize(self.loss)
         return self

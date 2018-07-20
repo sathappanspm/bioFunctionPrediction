@@ -29,11 +29,11 @@ class ConvAutoEncoder(object):
 
         # create feature embedding (this is done at character level or ngram level based on kind of input)
         # shape batchsize x maxlen x embedding_size
-        #mask = tf.concat([[0], tf.ones(self.vocab_size - 1)], axis=0)
+        mask = tf.concat([[0], tf.ones(self.vocab_size)], axis=0)
         with tf.name_scope('aminoAcid_emb_layer'):
-            self.embmatrix = tf.get_variable('emb', [self.vocab_size, self.embedding_dim],
+            self.embmatrix = tf.get_variable('emb', [self.vocab_size + 1, self.embedding_dim],
                                        dtype=tf.float32)
-            #self.embmatrix = tf.reshape(mask, shape=[-1, 1]) * self.embmatrix
+            self.embmatrix = tf.reshape(mask, shape=[-1, 1]) * self.embmatrix
             self.emblayer = tf.nn.embedding_lookup(self.embmatrix, self.xs_)
 
 
@@ -84,7 +84,8 @@ class ConvAutoEncoder(object):
 
 
         # shape is batch x 2000 x vocab_size
-        self.dec_output = tf.squeeze(tf.layers.conv2d(self.dec_conv3, 1, (41, 43), strides=(1,1), activation=self.actvn_fn))
+        #ipdb.set_trace()
+        self.dec_output = tf.squeeze(tf.layers.conv2d(self.dec_conv3, 1, (41, 42), strides=(1,1), activation=self.actvn_fn))
 
         return self.dec_output
 
@@ -99,8 +100,8 @@ class ConvAutoEncoder(object):
         #self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=lbls[:, :, 1:], logits=logits))
 
         tf.summary.scalar('loss', self.loss)
-        #self.optimizer = tf.train.RMSPropOptimizer(learning_rate=1e-3)
-        self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-5)
+        self.optimizer = tf.train.RMSPropOptimizer(learning_rate=1e-3)
+        #self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-5)
         self.train = self.optimizer.minimize(self.loss)
         self.summary = tf.summary.merge_all()
         return self
