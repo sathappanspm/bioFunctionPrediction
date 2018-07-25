@@ -233,9 +233,16 @@ def main(argv):
 						earlystop = True
 						break
 
-			chkpt.save(sess, os.path.join(FLAGS.outputdir, modelsavename,
-										  'model_epoch{}'.format(epoch)),
-					   global_step=step, write_meta_graph=metagraphFlag)
+			chkpt.save(
+				sess,
+				os.path.join(
+					FLAGS.outputdir,
+					modelsavename,
+					'model_epoch{}'.format(epoch)
+				),
+				global_step=step,
+				write_meta_graph=metagraphFlag
+			)
 			train_iter.reset()
 
 			if earlystop:
