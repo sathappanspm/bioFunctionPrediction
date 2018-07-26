@@ -289,11 +289,16 @@ class DataLoader(object):
     # def __init__(self, filename='/home/sathap1/workspace/bioFunctionPrediction/AllSeqsWithGO_expanded.tar'):
         self.dir = os.path.isdir(filename)
         if self.dir:
-            self.tarobj = filename
+            self.dataobj = filename
             self.members = glob.glob(os.path.join(filename, '*'))
         else:
-            self.tarobj = tarfile.open(filename)
-            self.members = self.tarobj.getmembers()
+            if filename.endswith('.tar') or filename.endswith('.tar.gz'):
+                self.dataobj = tarfile.open(filename)
+                self.members = self.dataobj.getmembers()
+            else:
+                self.dataobj = None #gzip.open(filename, 'rt') if filename.endswith('.gz') else open(filename)
+                self.members = [filename]
+                self.dir = True
 
         self.openfiles = set()
 
@@ -301,25 +306,30 @@ class DataLoader(object):
         """
         return the gzip file obj of member
         """
-        log.info('opening file - {}'.format(member.name))
-        if member.name in self.openfiles:
-            return self.getmember(self.members[random.randint(0, len(self.members))])
+        membername = member.name if self.dir is False else member
+        log.info('opening file - {}'.format(membername))
+        if membername in self.openfiles:
+            # randint includes both end-points
+            return self.getmember(self.members[random.randint(0, len(self.members) - 1)])
 
-        self.openfiles.add(member.name)
+        self.openfiles.add(membername)
         if self.dir:
-            fobj = gzip.open(member, 'rt')
+            fobj = gzip.open(member, 'rt') if membername.endswith('.gz') else open(member)
         else:
-            fobj = gzip.open(self.tarobj.extractfile(member),
+            fobj = gzip.open(self.dataobj.extractfile(member),
                               mode='rt')
 
-        return (member.name, fobj)
+        return (membername, fobj)
 
     def getrandom(self):
+        if len(self.openfiles) == len(self.members):
+            return (None, None)
+
         return self.getmember(self.members[random.randint(0, len(self.members))])
 
     def close(self):
         if not self.dir:
-            self.tarobj.close()
+            self.dataobj.close()
 
 
 class DataIterator(object):
@@ -328,6 +338,7 @@ class DataIterator(object):
                  featuretype='onehot', dataloader=None,
                  numfiles=1, ngramsize=3, all_labels=True,
                  numfuncs=0, onlyLeafNodes=False, autoreset=False,
+                 test=False,
                  **kwargs):
         self.fobj = []
         self.fnames = []
@@ -346,6 +357,7 @@ class DataIterator(object):
         self.stopiter = False
         self.onlyLeafNodes = onlyLeafNodes
         self.autoreset = autoreset
+        self.test = test
         log.info('only leaf nodes will be used as labels - {}'.format(onlyLeafNodes))
         self.expectedshape = ((self.maxseqlen - self.ngramsize + 1)
                               if self.featuretype == 'ngrams' else self.maxseqlen)
@@ -374,31 +386,34 @@ class DataIterator(object):
             if len(seq) > self.maxseqlen:
                 continue
 
-            desc = json.loads(fastaObj.description.split(' ', 1)[1])
-            try:
-                funcs = [GODAG.get(func['go_id']) for func in desc['go_ids']
-                         if((func.get('qualifier', '') != 'NOT') and
-                         ((self.functype == '') or
-                         (self.functype[-1].lower() == func['aspect'].lower()))
-                         )]
+            inputs.append(self.featureExt(seq))
+            if self.test is True:
+                labels.append(fastaObj)
+            else:
+                try:
+                    desc = json.loads(fastaObj.description.split(' ', 1)[1])
+                    funcs = [GODAG.get(func['go_id']) for func in desc['go_ids']
+                             if((func.get('qualifier', '') != 'NOT') and
+                             ((self.functype == '') or
+                             (self.functype[-1].lower() == func['aspect'].lower()))
+                             )]
 
-                if self.onlyLeafNodes is True:
-                    funcs = GODAG.get_leafnodes(funcs)
-                    #if self.limit is not None:
-                        # only predict limit number of functions
-                        #funcs = funcs[:self.limit]
-                    ids = [GODAG.get_id(fn) for fn in funcs]
-                    labels.append([i for i  in ids  if i != -1])
-                else:
-                    labels.append(GODAG.to_npy(funcs))
+                    if self.onlyLeafNodes is True:
+                        funcs = GODAG.get_leafnodes(funcs)
+                        #if self.limit is not None:
+                            # only predict limit number of functions
+                            #funcs = funcs[:self.limit]
+                        ids = [GODAG.get_id(fn) for fn in funcs]
+                        labels.append([i for i  in ids  if i != -1])
+                    else:
+                        labels.append(GODAG.to_npy(funcs))
 
-                inputs.append(self.featureExt(seq))
-            except Exception as e:
-                # ipdb.set_trace()
-                log.exception('error in loader - {}'.format(str(e)))
-                continue
+                except Exception as e:
+                    # ipdb.set_trace()
+                    log.exception('error in loader - {}'.format(str(e)))
+                    continue
 
-            if len(labels) >= self.batchsize:
+            if len(inputs) >= self.batchsize:
                 self.itersize += 1
                 inputs, labels = self._format(inputs, labels)
                 # log.info('sending batch, with labels size-{}'.format(str(labels.shape)))
@@ -431,14 +446,14 @@ class DataIterator(object):
 
     def _format(self, inputs, labels):
         inputs = pd.DataFrame(inputs, dtype=np.int32).fillna(0)
-        if isinstance(labels[0], list):
+        if self.test is False and isinstance(labels[0], list):
             labels = pd.DataFrame(labels, dtype=np.int32).fillna(0, downcast='infer').as_matrix()
             if labels.shape[1] < self.numfuncs:
                 diff = self.numfuncs - labels.shape[1]
                 labels = np.hstack([labels, np.zeros((labels.shape[0], diff), dtype=np.int32)])
             #log.info('percentage of zeros in labelspace-{}/160'.format((labels==0).sum()))
         else:
-            labels = np.vstack(labels)
+            labels = np.vstack(labels) if self.test is False else labels
 
         # log.info('{}'.format(str(inputs.shape)))
         if inputs.shape[1] < self.expectedshape:
@@ -447,10 +462,10 @@ class DataIterator(object):
                                                 self.expectedshape - inputs.shape[1]))], axis=1)
         # log.info('batch shape is {}-{}'.format(inputs.shape, labels.shape))
         # log.info('max id is {}'.format(np.max(inputs)))
-        if labels.shape[1] < 10:
-            ipdb.set_trace()
+        # if labels.shape[1] < 10:
+        # ipdb.set_trace()
 
-        if self.all_labels is False:
+        if self.test is False and self.all_labels is False:
             labels = labels[:, :self.numfuncs]
 
         return inputs, labels

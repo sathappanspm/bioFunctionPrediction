@@ -181,18 +181,18 @@ def main(argv):
                 step += 1
 
             if True:
-                log.info('beginning validation')
-                prec, recall, f1 = validate(valid_dataiter, sess, encoder, decoder, test_writer)
-                thres = np.argmax(np.round(f1, 2))
-                log.info('epoch: {} \n precision: {}, recall: {}, f1: {}'.format(epoch,
-                                                                                 np.round(prec, 2)[thres],
-                                                                                 np.round(recall, 2)[thres],
-                                                                                 np.round(f1, 2)[thres]))
-                log.info('selected threshold is {}'.format(thres/10 + 0.1))
-                if f1[thres] > (bestf1 + 1e-3):
-                    bestf1 = f1[thres]
-                    bestthres = THRESHOLD_RANGE[thres]
-                    wait = 0
+                # log.info('beginning validation')
+                # prec, recall, f1 = validate(valid_dataiter, sess, encoder, decoder, test_writer)
+                # thres = np.argmax(np.round(f1, 2))
+                # log.info('epoch: {} \n precision: {}, recall: {}, f1: {}'.format(epoch,
+                #                                                                  np.round(prec, 2)[thres],
+                #                                                                  np.round(recall, 2)[thres],
+                #                                                                  np.round(f1, 2)[thres]))
+                # log.info('selected threshold is {}'.format(thres/10 + 0.1))
+                if True: # and f1[thres] > (bestf1 + 1e-3):
+                    # bestf1 = f1[thres]
+                    # bestthres = THRESHOLD_RANGE[thres]
+                    # wait = 0
                     chkpt.save(sess, os.path.join(FLAGS.outputdir, modelsavename,
                                                     'model_{}_{}'.format(FLAGS.function, step)),
                                 global_step=step, write_meta_graph=metagraphFlag)
