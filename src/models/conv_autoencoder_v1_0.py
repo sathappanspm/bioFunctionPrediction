@@ -49,7 +49,7 @@ class ConvAutoEncoder(object):
 
 		conv_b = []
 		conv_w = []
-		for i in range( self.num_conv_layers ):
+		for i in range(self.num_conv_layers):
 			conv_w.append('conv_w_{}'.format(i))
 			conv_b.append('conv_b_{}'.format(i))
 
@@ -76,8 +76,8 @@ class ConvAutoEncoder(object):
 			[15, 9]
 
 		]
-		self.num_filters = [32, 16, 16, 8 , 4]
-		self.inp_channels = [1, 32, 16, 16, 8 ,4]
+		self.num_filters = [32, 16, 16, 8, 4]
+		self.inp_channels = [1, 32, 16, 16, 8, 4]
 
 		self.strides = [
 			[1, 1, 1, 1],
@@ -192,7 +192,6 @@ class ConvAutoEncoder(object):
 		self.optimizer = tf.train.AdamOptimizer(learning_rate=1e-3)
 		self.train = self.optimizer.minimize(self.loss)
 		return
-
 
 # m = ConvAutoEncoder(25, 2000)
 # m.build()
