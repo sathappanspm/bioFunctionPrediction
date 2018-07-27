@@ -46,18 +46,17 @@ class ConvAutoEncoder(object):
 
 	# Names for the Tensorflow Graph
 	def set_variable_names(self):
+
+		conv_b = []
+		conv_w = []
+		for i in range( self.num_conv_layers ):
+			conv_w.append('conv_w_{}'.format(i))
+			conv_b.append('conv_b_{}'.format(i))
+
 		self.name_dict = {
 			'emb': ['emb_wt'],
-			'conv_w': [
-				'conv_w_1',
-				'conv_w_2',
-				'conv_w_3'
-			],
-			'conv_b': [
-				'conv_b_1',
-				'conv_b_2',
-				'conv_b_3'
-			],
+			'conv_w': conv_w,
+			'conv_b': conv_b,
 		}
 
 	def get_variable_name(self, layer, idx=0):
@@ -68,19 +67,24 @@ class ConvAutoEncoder(object):
 	# ------------------------- #
 	def set_hyper_parameters(self):
 
-		self.num_conv_layers = 3
+		self.num_conv_layers = 5
 		self.kernel_size = [
 			[3, 2],
 			[7, 5],
-			[9, 5]
+			[9, 5],
+			[11, 7],
+			[15, 9]
+
 		]
-		self.num_filters = [32, 16, 8]
-		self.inp_channels = [1, 32, 16]
+		self.num_filters = [32, 16, 16, 8 , 4]
+		self.inp_channels = [1, 32, 16, 16, 8 ,4]
 
 		self.strides = [
 			[1, 1, 1, 1],
-			[1, 1, 1, 1],
-			[1, 1, 1, 1]
+			[1, 2, 2, 1],
+			[1, 4, 4, 1],
+			[1, 4, 2, 1],
+			[1, 2, 2, 1],
 		]
 
 	def get_variable(self, shape, name=None):
@@ -142,6 +146,7 @@ class ConvAutoEncoder(object):
 				# print(conv_i)
 				log.info('[Conv AE] Encoder layer i output shape : {}'.format(conv_i.shape))
 				conv_layer_ops.append(conv_i)
+				print(conv_i.shape)
 				cur_inp = conv_i
 
 		with tf.name_scope('Decoder'):
@@ -169,6 +174,7 @@ class ConvAutoEncoder(object):
 				)
 
 				log.info('[Conv AE] Decoder layer i output shape : {}'.format(dec_i.shape))
+				print(dec_i.shape)
 				deconv_layer_ops.append(dec_i)
 
 		dec_op = deconv_layer_ops[-1]
@@ -188,4 +194,5 @@ class ConvAutoEncoder(object):
 		return
 
 
-m = ConvAutoEncoder(25, 2000)
+# m = ConvAutoEncoder(25, 2000)
+# m.build()
