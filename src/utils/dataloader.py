@@ -24,7 +24,7 @@ import json
 import os
 import sys
 import pandas as pd
-import ipdb
+import pdb
 
 random.seed(1)
 #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -449,7 +449,7 @@ class DataIterator(object):
         # log.info('batch shape is {}-{}'.format(inputs.shape, labels.shape))
         # log.info('max id is {}'.format(np.max(inputs)))
         if labels.shape[1] < 10:
-            ipdb.set_trace()
+            pdb.set_trace()
 
         if self.all_labels is False:
             labels = labels[:, :self.numfuncs]

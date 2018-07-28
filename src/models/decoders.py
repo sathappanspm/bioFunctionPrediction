@@ -40,7 +40,7 @@ class HierarchicalGODecoder(object):
                  'mf': MOLECULAR_FUNCTION,
                  'bp': BIOLOGICAL_PROCESS}
 
-    def __init__(self, funcs, inputlayer, root='mf',
+    def __init__(self, funcs, inputlayer, prior_loss=0, root='mf',
                  lossfunc=tf.nn.sigmoid_cross_entropy_with_logits,
                  learning_rate=0.001):
         self.root = HierarchicalGODecoder.FUNC_DICT.get(root, '')
@@ -48,6 +48,7 @@ class HierarchicalGODecoder(object):
         self.lossfunc = lossfunc
         self.learning_rate = learning_rate
         self.funcs = funcs
+        self.prior_loss = prior_loss
         log.info('decoder is set to predict for {}'.format(len(funcs)))
 
     def get_node_func(self, node):
@@ -57,6 +58,7 @@ class HierarchicalGODecoder(object):
         return tf.sigmoid(tf.matmul(self.inputs, var) + bias, name='{}_out'.format(name))
 
     def init_variables(self, godag):
+        self.inputs = tf.contrib.layers.flatten(self.inputs)
         self.ys_ = tf.placeholder(shape=[None, len(godag.GOIDS)],
                                   dtype=tf.float32, name='y_out')
         self.threshold = tf.placeholder(shape=(1,), dtype=tf.float32, name='thres')
@@ -103,9 +105,10 @@ class HierarchicalGODecoder(object):
         #euclideanloss = tf.reduce_mean(tf.square(1 - self.ys_[:, :len(self.funcs)] * self.output))
 
         #self.loss += euclideanloss
-        tf.summary.scalar('loss', self.loss)
+        self.finalloss = self.loss + self.prior_loss
+        tf.summary.scalar('loss', self.finalloss)
         self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
-        self.train = self.optimizer.minimize(self.loss)
+        self.train = self.optimizer.minimize(self.finalloss)
 
         self.prediction = tf.concat([self.output,
                                      tf.zeros((tf.shape(self.output)[0],
