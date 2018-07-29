@@ -2,8 +2,8 @@
 # -*- coding:utf-8 -*-
 
 """
-        *.py: Description of what * does.
-        Last Modified:
+                *.py: Description of what * does.
+                Last Modified:
 """
 
 __author__ = "Debanjan Datta"
@@ -12,7 +12,7 @@ __version__ = "0.0.1"
 
 import tensorflow as tf
 import logging
-import ipdb
+import pdb
 
 log = logging.getLogger('root.convAE')
 
@@ -76,8 +76,8 @@ class ConvAutoEncoder(object):
             [15, 9]
 
         ]
-        self.num_filters = [32, 16, 16, 8, 4]
-        self.inp_channels = [1, 32, 16, 16, 8, 4]
+        self.num_filters = [32, 16, 16, 8 , 4]
+        self.inp_channels = [1, 32, 16, 16, 8 ,4]
 
         self.strides = [
             [1, 1, 1, 1],
@@ -149,6 +149,7 @@ class ConvAutoEncoder(object):
                 print(conv_i.shape)
                 cur_inp = conv_i
 
+        self.enc_out = cur_inp
         with tf.name_scope('Decoder'):
             deconv_layer_ops = []
             for i in range(self.num_conv_layers - 1, -1, -1):
@@ -186,12 +187,24 @@ class ConvAutoEncoder(object):
         return
 
     def build_train(self):
-        _x = self.x
+        _x = self.x_input
         _y = self.final_op
-        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=_x, logits=_y)
+        self.loss1 = tf.losses.sparse_softmax_cross_entropy(labels=_x, logits=_y)
+        self.loss2 = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(_x, depth=self.vocab_size + 1), logits=_y)
+        ssm = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=_x, logits=_y)
+        self.loss = tf.reduce_mean(tf.reduce_mean(ssm, axis=1))
         self.optimizer = tf.train.AdamOptimizer(learning_rate=1e-3)
         self.train = self.optimizer.minimize(self.loss)
+        self.predicted_prob = tf.nn.softmax(_y, axis=-1, name='predicted_seq')
+        self.max_out = tf.argmax(self.predicted_prob, axis=-1)
+
+        self.truepos = tf.reduce_sum(tf.cast(self.max_out == _x, dtype=tf.float32))
+        self.precision = tf.divide(self.truepos, tf.cast(tf.size(self.max_out), dtype=tf.float32), name='precision')
         return
+
+
+
+
 
 # m = ConvAutoEncoder(25, 2000)
 # m.build()
