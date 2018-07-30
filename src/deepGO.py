@@ -153,7 +153,7 @@ def main(argv):
                              pretrained_embedding=pretrained).build()
 
         log.info('built encoder')
-        decoder = HierarchicalGODecoder(funcs, encoder.outputs, FLAGS.function).build(GODAG)
+        decoder = HierarchicalGODecoder(funcs, encoder.outputs, root=FLAGS.function).build(GODAG)
         log.info('built decoder')
         init = tf.global_variables_initializer()
         init.run(session=sess)

@@ -1,24 +1,35 @@
 #!/bin/bash
 #SBATCH -J PFP
-##SBATCH -p normal_q
-#SBATCH -p gpu_q
+#SBATCH -p normal_q
+
+## Comment this next line in huckleberry 
+##SBATCH -p gpu_q
+
 #SBATCH -n 1
+
+## Next line needed only in VBI servers
 ##SBATCH -A fungcat
+
+## Check sinfo before setting this
 ##SBATCH --nodelist hu008
+
 #SBATCH -t 360:00
 #SBATCH --mem=30G
-## uncomment for huckleberry
+
+## Uncomment for huckleberry
 #SBATCH --gres=gpu:pascal:1
+
 ## comment if not huckleberry
 ##SBATCH --gres=gpu:1
 
 
-### Modules for huckleberry, uncomment accordingly
+## ---  Modules for huckleberry, uncomment accordingly --- ##
 #module load anaconda2
-#module load cuda
+module load cuda
+module load nccl
 
-### sathappans anaconda virtual environment
-#source activate pytorch
+## User specific anaconda virtual environment
+source activate venv
 
 ## Modules for discovery
 #module load TensorFlow/1.6.0-foss-2018a-Python-3.6.4-CUDA-9.1.85
@@ -26,10 +37,10 @@
 
 
 
-
+LOCAL="Code/fungcat"
 #### Code for running python
-RESULTDIR="/home/sathap1/workspace/bioFunctionPrediction/results/deepgo/"
-SCRIPT_ROOT="/home/sathap1/workspace/bioFunctionPrediction/src/"
+RESULTDIR="${HOME}/${LOCAL}/bioFunctionPrediction/results/deepgo/"
+SCRIPT_ROOT="${HOME}/${LOCAL}/bioFunctionPrediction/src/"
 cd $SCRIPT_ROOT
 
 FUNCTION="bp"
