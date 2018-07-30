@@ -34,7 +34,6 @@ class ConvAutoEncoder(object):
         self.vocab_size = vocab_size
         self.maxlen = maxlen
         self.actvn_fn = tf.nn.tanh
-        self.emb_matrix = None
         self.set_hyper_parameters()
         self.set_variable_names()
 
@@ -179,7 +178,7 @@ class ConvAutoEncoder(object):
         dec_op = deconv_layer_ops[-1]
         cur_op = tf.squeeze(dec_op, axis=-1)
 
-        rev_emb_op = tf.einsum('ijk,kl->ijl', cur_op, tf.transpose(self.embed_w))
+        rev_emb_op = tf.einsum('ijk,kl->ijl', cur_op, tf.transpose(self.embmatrix))
         log.info('[Conv AE] Final output shape : ' + str(rev_emb_op.shape))
         self.final_op = rev_emb_op
         return
@@ -187,17 +186,17 @@ class ConvAutoEncoder(object):
     def build_train(self):
         _x = self.x_input
         _y = self.final_op
-        self.loss1 = tf.losses.sparse_softmax_cross_entropy(labels=_x, logits=_y)
-        self.loss2 = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(_x, depth=self.vocab_size + 1), logits=_y)
+        # self.loss1 = tf.losses.sparse_softmax_cross_entropy(labels=_x, logits=_y)
+        # self.loss2 = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(_x, depth=self.vocab_size + 1), logits=_y)
         ssm = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=_x, logits=_y)
-        self.loss = tf.reduce_mean(tf.reduce_mean(ssm, axis=1))
+        self.loss = tf.reduce_mean(tf.reduce_mean(ssm, axis=1), name='encoder_loss')
         self.optimizer = tf.train.AdamOptimizer(learning_rate=1e-3)
         self.train = self.optimizer.minimize(self.loss)
-        self.predicted_prob = tf.nn.softmax(_y, axis=-1, name='predicted_seq')
+        self.predicted_prob = tf.nn.softmax(_y, axis=-1, name='enc_predicted_seq')
         self.max_out = tf.argmax(self.predicted_prob, axis=-1)
 
         self.truepos = tf.reduce_sum(tf.cast(self.max_out == _x, dtype=tf.float32))
-        self.precision = tf.divide(self.truepos, tf.cast(tf.size(self.max_out), dtype=tf.float32), name='precision')
+        # self.precision = tf.divide(self.truepos, tf.cast(tf.size(self.max_out), dtype=tf.float32), name='precision')
         return
 
 
