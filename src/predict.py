@@ -79,15 +79,16 @@ def create_args():
     return
 
 
-def predict_evaluate(dataiter, thres, modelpath):
+def predict_evaluate(dataiter, thres, placeholders, modelpath):
     avgPrec, avgRecall, avgF1 = 0.0, 0.0, 0.0
     with tf.Session() as sess:
         saver = tf.train.import_meta_graph(glob(os.path.join(modelpath, 'model*meta'))[0])
         saver.restore(sess, tf.train.latest_checkpoint(modelpath))
         log.info('restored model')
         graph = tf.get_default_graph()
-        tf_x, tf_y = graph.get_tensor_by_name('x_input:0'), graph.get_tensor_by_name('y_out:0')
-        tf_thres = graph.get_tensor_by_name('thres:0')
+        # tf_x, tf_y, tf_thres = graph.get_tensor_by_name('x_input:0'), graph.get_tensor_by_name('y_out:0')
+        # tf_thres = graph.get_tensor_by_name('thres:0')
+        tf_x, tf_y, tf_thres = [graph.get_tensor_by_name(name) for name in placeholders]
         metrics = [graph.get_tensor_by_name('precision:0'),
                    graph.get_tensor_by_name('recall:0'),
                    graph.get_tensor_by_name('f1:0')]

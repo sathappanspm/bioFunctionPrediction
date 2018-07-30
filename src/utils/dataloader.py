@@ -328,6 +328,9 @@ class DataLoader(object):
     def getrandom(self):
         return self.getmember(self.members[random.randint(0, len(self.members))])
 
+    def getfile(self, name):
+        return self.getmember(name)
+
     def close(self):
         if not self.dir:
             for fl in self.openfiles:
@@ -342,7 +345,7 @@ class DataIterator(object):
                  featuretype='onehot', dataloader=None,
                  numfiles=1, ngramsize=3, all_labels=True,
                  numfuncs=0, onlyLeafNodes=False, autoreset=False,
-                 filterByEvidenceCodes=False,
+                 filterByEvidenceCodes=False, filename=None
                  **kwargs):
         self.fobj = []
         self.fnames = []
@@ -362,6 +365,7 @@ class DataIterator(object):
         self.onlyLeafNodes = onlyLeafNodes
         self.autoreset = autoreset
         self.filterByEC = filterByEvidenceCodes
+        self.filename = filename
         log.info('only leaf nodes will be used as labels - {}'.format(onlyLeafNodes))
         self.expectedshape = ((self.maxseqlen - self.ngramsize + 1)
                               if self.featuretype == 'ngrams' else self.maxseqlen)
@@ -472,7 +476,10 @@ class DataIterator(object):
         return inputs, labels
 
     def loadfile(self):
-        flhandler = self.loader.getrandom()
+        if self.filename:
+            flhandler = self.loader.getfile(self.filename)
+        else:
+            flhandler = self.loader.getrandom()
         self.fnames.append(flhandler[0])
         self.fobj.append(flhandler[1])
         log.info('read file - {}'.format(flhandler[0]))

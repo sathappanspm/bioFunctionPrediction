@@ -139,12 +139,13 @@ def main(argv):
 
     with tf.Session() as sess:
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
-                                      dataloader=data, functype=FLAGS.function, featuretype='ngrams')
+                                      dataloader=data, functype=FLAGS.function, featuretype='ngrams',
+                                      filename='validation_fasta.gz', filterByEvidenceCodes=True)
 
 
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
                                   seqlen=FLAGS.maxseqlen, dataloader=data,
-                                  numfiles=np.floor((FLAGS.trainsize * FLAGS.batchsize) / 250000),
+                                  filename='train_fasta.gz', filterByEvidenceCodes=True,
                                   functype=FLAGS.function, featuretype='ngrams')
 
         encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap),
@@ -209,8 +210,11 @@ def main(argv):
 
     log.info('testing model')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
-                                 dataloader=data, functype=FLAGS.function, featuretype='ngrams')
-    prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], os.path.join(FLAGS.outputdir, modelsavename))
+                                 dataloader=data, functype=FLAGS.function, featuretype='ngrams',
+                                 filename='test_fasta.gz', filterByEvidenceCodes=True)
+
+    placeholders = ['x_in:0', 'y_out:0', 'thres:0']
+    prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], placeholders, os.path.join(FLAGS.outputdir, modelsavename))
     log.info('test results')
     log.info('precision: {}, recall: {}, F1: {}'.format(round(prec, 2), round(recall, 2), round(f1, 2)))
     data.close()
