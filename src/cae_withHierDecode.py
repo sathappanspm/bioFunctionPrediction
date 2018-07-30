@@ -20,7 +20,8 @@ import pandas as pd
 import tensorflow as tf
 from utils.dataloader import GODAG, FeatureExtractor
 from utils.dataloader import DataIterator, DataLoader
-from models.encoders import CNNEncoder
+# from models.conv_autoencoder_v1_0 import ConvAutoEncoder
+from models.conv_autoencoder import ConvAutoEncoder
 from models.decoders import HierarchicalGODecoder
 import json
 import logging
@@ -105,7 +106,7 @@ def validate(dataiter, sess, encoder, decoder, summary_writer):
         for thres in THRESHOLD_RANGE:
             p, r, f, summary = sess.run([decoder.precision, decoder.recall,
                                          decoder.f1score, decoder.summary],
-                                         feed_dict={decoder.ys_: y, encoder.xs_: x,
+                                         feed_dict={decoder.ys_: y, encoder.x_input: x,
                                                     decoder.threshold: [thres]})
             summary_writer.add_summary(summary, step)
             prec.append(p)
@@ -139,21 +140,31 @@ def main(argv):
 
     with tf.Session() as sess:
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
-                                      dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                      filename='validation_fasta.gz', filterByEvidenceCodes=True)
+                                      seqlen=FLAGS.maxseqlen,
+                                      dataloader=data, functype=FLAGS.function, featuretype='ngrams')
 
 
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
                                   seqlen=FLAGS.maxseqlen, dataloader=data,
-                                  filename='train_fasta.gz', filterByEvidenceCodes=True,
+                                  numfiles=np.floor((FLAGS.trainsize * FLAGS.batchsize) / 250000),
                                   functype=FLAGS.function, featuretype='ngrams')
 
-        encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap),
-                             inputsize=train_iter.expectedshape,
-                             pretrained_embedding=pretrained).build()
+        vocabsize = len(FeatureExtractor.ngrammap)
 
+        #cae_model_obj = ConvAutoEncoder(
+        #    vocab_size=vocabsize,
+        #    maxlen=train_iter.expectedshape,
+        #    batch_size=FLAGS.batchsize,
+        #    embedding_dim=256
+        #)
+        #cae_model_obj.build()
+
+
+        cae_model_obj = ConvAutoEncoder(vocab_size=vocabsize, maxlen=train_iter.expectedshape).build()
         log.info('built encoder')
-        decoder = HierarchicalGODecoder(funcs, encoder.outputs, FLAGS.function).build(GODAG)
+        decoder = HierarchicalGODecoder(funcs, cae_model_obj.enc_out,
+                                        root=FLAGS.function,
+                                        prior_loss=cae_model_obj.loss).build(GODAG)
         log.info('built decoder')
         init = tf.global_variables_initializer()
         init.run(session=sess)
@@ -167,7 +178,7 @@ def main(argv):
         wait = 0
         bestf1 = 0
         bestthres = 0
-        metagraphFlag = True
+        metagraphFlag = False
         log.info('starting epochs')
         tf.train.export_meta_graph(filename=os.path.join(FLAGS.outputdir, modelsavename,
                                                         'model_{}.meta'.format(FLAGS.function)))
@@ -176,15 +187,16 @@ def main(argv):
                 if x.shape[0] != y.shape[0]:
                     raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
 
-                _, loss, summary = sess.run([decoder.train, decoder.loss, decoder.summary],
-                                            feed_dict={decoder.ys_: y, encoder.xs_: x,
-                                                       decoder.threshold: [.3]})
+                _, total_loss, encoder_loss, summary = sess.run([decoder.train, decoder.loss, cae_model_obj.loss, decoder.summary],
+                                                                 feed_dict={decoder.ys_: y, cae_model_obj.x_input: x,
+                                                                            decoder.threshold: [.3]})
                 train_writer.add_summary(summary, step)
-                log.info('step-{}, loss-{}'.format(step, round(loss, 2)))
+                log.info('step-{}, total_loss-{}, encoder_loss: {}'.format(step, round(total_loss, 2), round(encoder_loss, 2)))
                 step += 1
+
                 if step % (100) == 0:
                     log.info('beginning validation')
-                    prec, recall, f1 = validate(valid_dataiter, sess, encoder, decoder, test_writer)
+                    prec, recall, f1 = validate(valid_dataiter, sess, cae_model_obj, decoder, test_writer)
                     thres = np.argmax(np.round(f1, 2))
                     log.info('epoch: {} \n precision: {}, recall: {}, f1: {}'.format(epoch,
                                                                                      np.round(prec, 2)[thres],
@@ -205,15 +217,14 @@ def main(argv):
                             log.info('f1 didnt improve for last {} validation steps, so stopping'.format(maxwait))
                             break
 
+
             train_iter.reset()
 
     log.info('testing model')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
-                                 dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                 filename='test_fasta.gz', filterByEvidenceCodes=True)
-
-    placeholders = ['x_in:0', 'y_out:0', 'thres:0']
-    prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], placeholders, os.path.join(FLAGS.outputdir, modelsavename))
+                                 seqlen=FLAGS.maxseqlen,
+                                 dataloader=data, functype=FLAGS.function, featuretype='ngrams')
+    prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], os.path.join(FLAGS.outputdir, modelsavename))
     log.info('test results')
     log.info('precision: {}, recall: {}, F1: {}'.format(round(prec, 2), round(recall, 2), round(f1, 2)))
     data.close()
