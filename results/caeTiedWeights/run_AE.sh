@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J deepAEtanh
+#SBATCH -J PFP
 ##SBATCH -p normal_q
 #SBATCH -p gpu_q
 #SBATCH -n 1
@@ -19,11 +19,12 @@ RESULTDIR="/home/sathap1/workspace/bioFunctionPrediction/results/caeTiedWeights/
 SCRIPT_ROOT="/home/sathap1/workspace/bioFunctionPrediction/src/"
 cd $SCRIPT_ROOT
 
-OUTDIR="${RESULTDIR}/model_3mers_mf"
+FUNCTION="bp"
+OUTDIR="${RESULTDIR}/model_3mers_${FUNCTION}"
 mkdir -p $OUTDIR
 
 BATCHSIZE=16
 
-python ${SCRIPT_ROOT}/cae_withHierDecode.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 5120000 / $BATCHSIZE )) --testsize $(( 2560000 / $BATCHSIZE )) --validationsize 200 --inputfile /groups/fungcat/datasets/current/fasta/AllSeqsWithGO_expanded.tar --batchsize $BATCHSIZE --featuretype ngrams --maxseqlen 2002
+python ${SCRIPT_ROOT}/cae_withHierDecode.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 5120000 / $BATCHSIZE )) --testsize $(( 2560000 / $BATCHSIZE )) --validationsize 200 --inputfile /groups/fungcat/datasets/current/fasta/AllSeqsWithGO_expanded.tar --batchsize $BATCHSIZE --featuretype onehot --maxseqlen 2000 --function ${FUNCTION}
 
 source deactivate

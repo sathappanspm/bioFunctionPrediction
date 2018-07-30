@@ -31,7 +31,7 @@ random.seed(1)
 log = logging.getLogger('root.DataLoader')
 
 DATADIR = os.path.join(os.path.dirname(__file__), '../../resources/')
-
+EVIDENCE_CODES = ['EXP', 'IDA', 'IPI', 'IMP', 'IGI', 'IEP', 'TAS', 'IC']
 BIOLOGICAL_PROCESS = 'GO:0008150'
 MOLECULAR_FUNCTION = 'GO:0003674'
 CELLULAR_COMPONENT = 'GO:0005575'
@@ -293,33 +293,46 @@ class DataLoader(object):
             self.tarobj = filename
             self.members = glob.glob(os.path.join(filename, '*'))
         else:
-            self.tarobj = tarfile.open(filename)
-            self.members = [fl for fl in self.tarobj.getmembers() if fl.isfile()]
+            if filename.endswith('.tar') or filename.endswith('.tar.gz'):
+                self.tarobj = tarfile.open(filename)
+                self.members = [fl for fl in self.tarobj.getmembers() if fl.isfile()]
+            else:
+                self.tarobj = filename
+                self.members = [filename]
 
-        self.openfiles = set()
+        self.openfiles = dict()
 
     def getmember(self, member):
         """
         return the gzip file obj of member
         """
-        log.info('opening file - {}'.format(member.name))
-        if member.name in self.openfiles:
-            return self.getmember(self.members[random.randint(0, len(self.members))])
+        memname = member.name if hasattr(member, 'name') else member
+        log.info('opening file - {}'.format(memname))
+        if memname in self.openfiles:
+            if len(self.openfiles) < len(self.members):
+                return self.getmember(self.members[random.randint(0, len(self.members))])
+            else:
+                fobj = self.openfiles[memname]
+                fobj.seek(0)
+                return (memname, fobj)
 
-        self.openfiles.add(member.name)
         if self.dir:
             fobj = gzip.open(member, 'rt')
         else:
             fobj = gzip.open(self.tarobj.extractfile(member),
                               mode='rt')
 
-        return (member.name, fobj)
+        self.openfiles[memname] = fobj
+        return (memname, fobj)
 
     def getrandom(self):
         return self.getmember(self.members[random.randint(0, len(self.members))])
 
     def close(self):
         if not self.dir:
+            for fl in self.openfiles:
+                self.openfiles.close()
+
             self.tarobj.close()
 
 
@@ -329,6 +342,7 @@ class DataIterator(object):
                  featuretype='onehot', dataloader=None,
                  numfiles=1, ngramsize=3, all_labels=True,
                  numfuncs=0, onlyLeafNodes=False, autoreset=False,
+                 filterByEvidenceCodes=False,
                  **kwargs):
         self.fobj = []
         self.fnames = []
@@ -347,6 +361,7 @@ class DataIterator(object):
         self.stopiter = False
         self.onlyLeafNodes = onlyLeafNodes
         self.autoreset = autoreset
+        self.filterByEC = filterByEvidenceCodes
         log.info('only leaf nodes will be used as labels - {}'.format(onlyLeafNodes))
         self.expectedshape = ((self.maxseqlen - self.ngramsize + 1)
                               if self.featuretype == 'ngrams' else self.maxseqlen)
@@ -381,7 +396,7 @@ class DataIterator(object):
                          if((func.get('qualifier', '') != 'NOT') and
                          ((self.functype == '') or
                          (self.functype[-1].lower() == func['aspect'].lower()))
-                         )]
+                          and ((not self.filterByEC) or (func['ec'] in EVIDENCE_CODES)))]
 
                 if self.onlyLeafNodes is True:
                     funcs = GODAG.get_leafnodes(funcs)

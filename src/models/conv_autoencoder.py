@@ -11,7 +11,7 @@ __email__ = "sathap1@vt.edu"
 __version__ = "0.0.1"
 import tensorflow as tf
 import logging
-import ipdb
+import pdb
 log = logging.getLogger('root.convAE')
 
 
@@ -25,7 +25,7 @@ class ConvAutoEncoder(object):
 
     def build_encoder(self):
         # input sequence of amino acids (mostly maxlen of 2000 is used), shape = batchsize x maxlen
-        self.xs_ = tf.placeholder(shape=[None, self.maxlen], dtype=tf.int32, name='xs_')
+        self.x_input = tf.placeholder(shape=[None, self.maxlen], dtype=tf.int32, name='xs_')
 
         # create feature embedding (this is done at character level or ngram level based on kind of input)
         # shape batchsize x maxlen x embedding_size
@@ -34,7 +34,7 @@ class ConvAutoEncoder(object):
             self.embmatrix = tf.get_variable('emb', [self.vocab_size + 1, self.embedding_dim],
                                        dtype=tf.float32)
             self.embmatrix = tf.reshape(mask, shape=[-1, 1]) * self.embmatrix
-            self.emblayer = tf.nn.embedding_lookup(self.embmatrix, self.xs_)
+            self.emblayer = tf.nn.embedding_lookup(self.embmatrix, self.x_input)
 
 
         # assuming embedding dimension is 64, and maxlen in 2000
@@ -61,8 +61,8 @@ class ConvAutoEncoder(object):
 
 
 
-        self.sequence_embedding = tf.layers.dense(tf.contrib.layers.flatten(self.conv4), 1024)
-        return self.sequence_embedding
+        self.enc_out = tf.layers.dense(tf.contrib.layers.flatten(self.conv4), 1024)
+        return self.enc_out
 
     def build_decoder(self, encoderout):
         dec_input = tf.reshape(tf.layers.dense(encoderout, 1496), shape=[-1, 34, 11, 4])
@@ -96,7 +96,8 @@ class ConvAutoEncoder(object):
         #logits = tf.log(clippedout / (1 - clippedout))
 
         #lbls = tf.one_hot(self.xs_, depth=self.vocab_size, dtype=tf.float32)
-        self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.xs_, logits=decoder))
+        self.loss = tf.losses.sparse_softmax_cross_entropy(labels=self.x_input, logits=decoder)
+        # self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.xs_, logits=decoder))
         #self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=lbls[:, :, 1:], logits=logits))
 
         tf.summary.scalar('loss', self.loss)

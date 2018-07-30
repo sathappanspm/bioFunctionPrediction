@@ -86,7 +86,7 @@ def predict_evaluate(dataiter, thres, modelpath):
         saver.restore(sess, tf.train.latest_checkpoint(modelpath))
         log.info('restored model')
         graph = tf.get_default_graph()
-        tf_x, tf_y = graph.get_tensor_by_name('x_in:0'), graph.get_tensor_by_name('y_out:0')
+        tf_x, tf_y = graph.get_tensor_by_name('x_input:0'), graph.get_tensor_by_name('y_out:0')
         tf_thres = graph.get_tensor_by_name('thres:0')
         metrics = [graph.get_tensor_by_name('precision:0'),
                    graph.get_tensor_by_name('recall:0'),
