@@ -345,7 +345,7 @@ class DataIterator(object):
                  featuretype='onehot', dataloader=None,
                  numfiles=1, ngramsize=3, all_labels=True,
                  numfuncs=0, onlyLeafNodes=False, autoreset=False,
-                 filterByEvidenceCodes=False, filename=None
+                 filterByEvidenceCodes=False, filename=None,
                  **kwargs):
         self.fobj = []
         self.fnames = []
