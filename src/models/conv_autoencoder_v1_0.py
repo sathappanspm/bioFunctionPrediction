@@ -22,11 +22,11 @@ log = logging.getLogger('root.convAE')
 class ConvAutoEncoder(object):
 
     def __init__(self,
-                 vocab_size=24,
-                 maxlen=2000,
-                 batch_size=128,
-                 embedding_dim=256
-                 ):
+                    vocab_size=24,
+                    maxlen=2000,
+                    batch_size=128,
+                    embedding_dim=256
+                    ):
 
         self.embedding_dim = embedding_dim
         self.batch_size = batch_size
@@ -48,7 +48,7 @@ class ConvAutoEncoder(object):
 
         conv_b = []
         conv_w = []
-        for i in range( self.num_conv_layers ):
+        for i in range(self.num_conv_layers):
             conv_w.append('conv_w_{}'.format(i))
             conv_b.append('conv_b_{}'.format(i))
 
@@ -125,11 +125,13 @@ class ConvAutoEncoder(object):
     def build_encoder_decoder(self):
         with tf.name_scope('Encoder'):
 
-            mask = tf.concat([[0], tf.ones(self.vocab_size)], axis=0)
-            self.embmatrix = tf.reshape(mask, shape=[-1, 1]) * self.embed_w
-            emb_op = tf.nn.embedding_lookup(self.embmatrix, self.x_input)
-            self.emb_op = tf.expand_dims(emb_op, axis=3)
+            self.x = tf.cast(self.x_input, tf.int64)
+            self.x = tf.one_hot(self.x, depth=self.vocab_size + 1, axis=-1)
 
+            print(' Shape of x ', self.x.shape)
+            emb_op = tf.einsum('ijk,kl->ijl', self.x, self.embed_w)
+            print(emb_op)
+            self.emb_op = tf.expand_dims(emb_op, axis=3)
             cur_inp = self.emb_op
             conv_layer_ops = []
             for i in range(self.num_conv_layers):
