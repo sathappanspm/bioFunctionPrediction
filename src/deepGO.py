@@ -153,7 +153,6 @@ def main(argv):
                              inputsize=train_iter.expectedshape,
                              pretrained_embedding=pretrained).build()
 
-        print(next(train_iter))
         log.info('built encoder')
         decoder = HierarchicalGODecoder(funcs, encoder.outputs, root=FLAGS.function).build(GODAG)
         log.info('built decoder')
