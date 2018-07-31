@@ -49,6 +49,7 @@ mkdir -p $OUTDIR
 
 BATCHSIZE=16
 
-python ${SCRIPT_ROOT}/deepGO.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 91987 / $BATCHSIZE )) --testsize $(( 24205 / $BATCHSIZE )) --validationsize $(( 4841 / $BATCHSIZE )) --inputfile ${SCRIPT_ROOT}/../resources/data --batchsize $BATCHSIZE --featuretype ngrams --maxseqlen 2002 --function ${FUNCTION}
+python ${SCRIPT_ROOT}/deepGO.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 91987 / $BATCHSIZE )) --testsize $(( 24205 / $BATCHSIZE )) --validationsize $(( 4841 / $BATCHSIZE )) --inputfile ./../resources/data --batchsize $BATCHSIZE --featuretype ngrams --maxseqlen 2002 --function ${FUNCTION}
 
+cd -
 source deactivate
