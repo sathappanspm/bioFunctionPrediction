@@ -141,12 +141,12 @@ def main(argv):
     with tf.Session() as sess:
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize, seqlen=FLAGS.maxseqlen,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                      filename='validation_seqs.fasta.gz', filterByEvidenceCodes=True)
+                                      filename='validation', filterByEvidenceCodes=True)
 
 
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
                                   seqlen=FLAGS.maxseqlen, dataloader=data,
-                                  filename='train_seqs.fasta.gz', filterByEvidenceCodes=True,
+                                  filename='train', filterByEvidenceCodes=True,
                                   functype=FLAGS.function, featuretype='ngrams')
 
         encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap),
@@ -173,6 +173,7 @@ def main(argv):
         tf.train.export_meta_graph(filename=os.path.join(FLAGS.outputdir, modelsavename,
                                                         'model_{}.meta'.format(FLAGS.function)))
         for epoch in range(FLAGS.num_epochs):
+            log.info('************EPOCH-{} *******'.format(epoch))
             for x, y in train_iter:
                 if x.shape[0] != y.shape[0]:
                     raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
@@ -211,7 +212,7 @@ def main(argv):
     log.info('testing model')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize, seqlen=FLAGS.maxseqlen,
                                  dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                 filename='test_seqs.fasta.gz', filterByEvidenceCodes=True)
+                                 filename='test', filterByEvidenceCodes=True)
 
     placeholders = ['x_in:0', 'y_out:0', 'thres:0']
     prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], placeholders, os.path.join(FLAGS.outputdir, modelsavename))
