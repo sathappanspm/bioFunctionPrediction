@@ -20,6 +20,7 @@ import numpy as np
 import networkx as nx
 from functools import partial
 import glob
+import io
 import json
 import os
 import sys
@@ -44,6 +45,50 @@ if nx.__version__ == '2.0':
     filterbyEdgeType = lambda etypes, net: net.edges(keys=etypes)
 else:
     filterbyEdgeType = lambda etypes, net: [(e[0], e[1]) for e in net.edges(keys=True) if e[2] in etypes]
+
+
+# code from smart_open package https://github.com/piskvorky/smart_open
+def make_closing(base, **attrs):
+    """
+    Add support for `with Base(attrs) as fout:` to the base class if it's missing.
+    The base class' `close()` method will be called on context exit, to always close
+    the file properly. This is needed for gzip.GzipFile, bz2.BZ2File etc in older
+    Pythons (<=2.6), which otherwise
+    raise "AttributeError: GzipFile instance has no attribute '__exit__'".
+    """
+    if not hasattr(base, '__enter__'):
+        attrs['__enter__'] = lambda self: self
+    if not hasattr(base, '__exit__'):
+        attrs['__exit__'] = lambda self, type, value, traceback: self.close()
+    return type('Closing' + base.__name__, (base, object), attrs)
+
+
+# code adapted from smart_open package https://github.com/piskvorky/smart_open
+def smart_open(fname, mode='rb'):
+    """
+    Stream from/to local filesystem, transparently (de)compressing gzip and bz2
+    files if necessary.
+    """
+    _, ext = os.path.splitext(fname)
+
+    if ext == '.bz2':
+        PY2 = sys.version_info[0] == 2
+        if PY2:
+            from bz2file import BZ2File
+        else:
+            from bz2 import BZ2File
+        fobj = make_closing(BZ2File)(fname, mode.replace('t', ''))
+
+    if ext == '.gz':
+        from gzip import GzipFile
+        fobj = make_closing(GzipFile)(fname, mode.replace('t', ''))
+    else:
+        fobj = open(fname, mode.replace('t', ''))
+
+    if 't' in mode:
+        fobj = io.TextIOWrapper(fobj, encoding=None, errors=None, newline=None)
+
+    return fobj
 
 
 def load_labelembedding(path, goids):
@@ -317,9 +362,13 @@ class DataLoader(object):
                 return (memname, fobj)
 
         if self.dir:
-            fobj = gzip.open(member, 'rt')
+            # fobj = gzip.open(member, 'rt')
+            fobj = smart_open(member, 'rt')
         else:
-            fobj = gzip.open(self.tarobj.extractfile(member),
+            # fobj = gzip.open(self.tarobj.extractfile(member),
+            #                   mode='rt')
+
+            fobj = smart_open(self.tarobj.extractfile(member),
                               mode='rt')
 
         self.openfiles[memname] = fobj
@@ -329,7 +378,8 @@ class DataLoader(object):
         return self.getmember(self.members[random.randint(0, len(self.members))])
 
     def getfile(self, name):
-        return self.getmember(os.path.join(self.tarobj, name))
+        fl = [n for n in self.members if name in os.path.basename(n)][0]
+        return self.getmember(fl)
 
     def close(self):
         if not self.dir:
