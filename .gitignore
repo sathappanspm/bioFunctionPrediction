@@ -1,3 +1,4 @@
 *.pyc
 *.log
 results/*/model*
+resources/data/*
