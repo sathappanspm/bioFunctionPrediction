@@ -138,14 +138,14 @@ def main(argv):
         FeatureExtractor.ngrammap = ngrammap
 
     with tf.Session() as sess:
-        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
+        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize, seqlen=FLAGS.maxseqlen,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                      filename='validation_fasta.gz', filterByEvidenceCodes=True)
+                                      filename='validation_seqs.fasta.gz', filterByEvidenceCodes=True)
 
 
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
                                   seqlen=FLAGS.maxseqlen, dataloader=data,
-                                  filename='train_fasta.gz', filterByEvidenceCodes=True,
+                                  filename='train_seqs.fasta.gz', filterByEvidenceCodes=True,
                                   functype=FLAGS.function, featuretype='ngrams')
 
         encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap),
@@ -208,9 +208,9 @@ def main(argv):
             train_iter.reset()
 
     log.info('testing model')
-    test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
+    test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize, seqlen=FLAGS.maxseqlen,
                                  dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                 filename='test_fasta.gz', filterByEvidenceCodes=True)
+                                 filename='test_seqs.fasta.gz', filterByEvidenceCodes=True)
 
     placeholders = ['x_in:0', 'y_out:0', 'thres:0']
     prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], placeholders, os.path.join(FLAGS.outputdir, modelsavename))

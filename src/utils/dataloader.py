@@ -298,7 +298,7 @@ class DataLoader(object):
                 self.members = [fl for fl in self.tarobj.getmembers() if fl.isfile()]
             else:
                 self.tarobj = filename
-                self.members = [filename]
+                self.members = glob.glob('{}/*'.format(filename))
 
         self.openfiles = dict()
 
@@ -329,7 +329,7 @@ class DataLoader(object):
         return self.getmember(self.members[random.randint(0, len(self.members))])
 
     def getfile(self, name):
-        return self.getmember(name)
+        return self.getmember(os.path.join(self.tarobj, name))
 
     def close(self):
         if not self.dir:
