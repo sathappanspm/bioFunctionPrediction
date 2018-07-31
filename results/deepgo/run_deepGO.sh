@@ -36,8 +36,6 @@ source activate pytorch
 #module load TensorFlow/1.6.0-foss-2018a-Python-3.6.4-CUDA-9.1.85
 #source ~/.start_discovery.sh
 
-
-
 LOCAL="workspace"
 #### Code for running python
 RESULTDIR="${HOME}/${LOCAL}/bioFunctionPrediction/results/deepgo/"
@@ -52,4 +50,5 @@ BATCHSIZE=16
 
 python ${SCRIPT_ROOT}/deepGO.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 91987 / $BATCHSIZE )) --testsize $(( 24205 / $BATCHSIZE )) --validationsize $(( 4841 / $BATCHSIZE )) --inputfile ${DATA} --batchsize $BATCHSIZE --featuretype ngrams --maxseqlen 2002 --function ${FUNCTION}
 
+cd -
 source deactivate
