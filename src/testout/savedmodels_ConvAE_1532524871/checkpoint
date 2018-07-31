@@ -1,5 +1,0 @@
-model_checkpoint_path: "model_epoch4-100"
-all_model_checkpoint_paths: "model_epoch1-40"
-all_model_checkpoint_paths: "model_epoch2-60"
-all_model_checkpoint_paths: "model_epoch3-80"
-all_model_checkpoint_paths: "model_epoch4-100"
