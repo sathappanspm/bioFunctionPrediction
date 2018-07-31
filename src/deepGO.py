@@ -117,6 +117,7 @@ def validate(dataiter, sess, encoder, decoder, summary_writer):
         avgF1 += f1
         step += 1
 
+    log.info('finished evaluating {} validation steps'.format(step))
     dataiter.reset()
     return (avgPrec / step, avgRecall / step, avgF1 / step)
 
