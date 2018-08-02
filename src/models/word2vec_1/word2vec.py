@@ -21,11 +21,12 @@ from bioFunctionPrediction.src.utils.dataloader import GODAG
 
 # ---Model config--- #
 Word_Embed_Size = 512
+epochs = 250
 # ---------------- #
 # MODE = 0 train the model
 # MODE = 1 fetch the embedding dict
 # ---------------- #
-MODE = 0
+MODE = 1
 # this file should have :
 # { _id[0...k]: np.array[shape = [Word_Embed_Size]] , ... }
 
@@ -44,14 +45,14 @@ def get_data():
 def train():
     global Word_Embed_Size
     global Word2vec_MODEL_FILE
-
+    global epochs
     data_dict_2 = get_data()
     sentences = []
     for k, v in data_dict_2.items():
         sentences.append(v)
     model = gensim.models.Word2Vec(
         sentences,
-        iter=25,
+        iter=epochs,
         window=4,
         size=Word_Embed_Size,
         workers=8,
@@ -91,6 +92,7 @@ def create_embed_dict():
     words = model.wv.vocab
 
     for k, sent in data_dict.items():
+        k = str(k).zfill(7)
         sent_vec = np.zeros([Word_Embed_Size])
         for w in sent:
             try:
@@ -101,9 +103,9 @@ def create_embed_dict():
                 print('Word not found ', w, 'in Vocab ', test)
         try:
             key_id = idmap[k]
-            emb_dict[k] = sent_vec
+            emb_dict[key_id] = sent_vec
         except:
-            print('Key not found in idmap ', key_id)
+            print('Key not found in idmap ', k)
     print(emb_dict.keys())
     return emb_dict
 
@@ -137,4 +139,7 @@ setup()
 def get_id_embed_dict():
     return initialize()
 
-get_id_embed_dict()
+z = get_id_embed_dict()
+
+
+
