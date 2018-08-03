@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 __author__ = "Debanjan Datta"
 __email__ = "ddatta@vt.edu"
 __version__ = "0.0.1"
@@ -75,7 +75,7 @@ def download_data():
 
     for url in urls:
         fname = wget.download(url)
-        if(fname.endswith("tar.gz")):
+        if (fname.endswith("tar.gz")):
             tar = tarfile.open(fname, "r:gz")
             tar.extractall()
             tar.close()
@@ -109,11 +109,11 @@ def combine_data():
     for _go in CAT_GO:
         # create a new dataframe
         df = pd.DataFrame(
-            columns=['sequences', 'ngrams' ,'labels']
+            columns=['sequences', 'ngrams', 'labels']
         )
         for _set in ORIG_SETS:
             data = get_file(_go, _set)
-            data = data[['sequences', 'ngrams' ,'labels' ]]
+            data = data[['sequences', 'ngrams', 'labels']]
             df = df.append(data, ignore_index=True, sort=True)
 
         train, test = train_test_split(df, test_size=0.2)
@@ -155,7 +155,7 @@ class Amino_Acid_Map:
 
     def load(self):
         global IGNORE_AA
-        data_dir =  os.path.join(os.path.dirname(__file__), './../../resources')
+        data_dir = os.path.join(os.path.dirname(__file__), './../../resources')
 
         with open(os.path.join(data_dir, 'aminoacids.txt'), 'r') as inpf:
             _id = 1
@@ -183,7 +183,8 @@ class Amino_Acid_Map:
         res = [
             self.amino_acid_to_id(amino_acid) for amino_acid in seq
         ]
-        return  res
+        return res
+
 
 # ------------------------- #
 class Ngram_Map:
@@ -199,7 +200,7 @@ class Ngram_Map:
         global UNKNOWN_AA
         ngrams_file = 'ngrams_21_aa.json'
 
-        ngrams_file_path = os.path.join(os.path.join(os.path.dirname(__file__), './../../resources'),ngrams_file)
+        ngrams_file_path = os.path.join(os.path.join(os.path.dirname(__file__), './../../resources'), ngrams_file)
         if os.path.isfile(ngrams_file_path):
             with open(ngrams_file_path, 'r') as file_handle:
                 json_str = file_handle.read()
@@ -214,7 +215,7 @@ class Ngram_Map:
             ngrams_list = []
             for _ngram in ngrams:
                 for _ignore_aa in IGNORE_AA:
-                    _n = _ngram.replace(_ignore_aa ,UNKNOWN_AA)
+                    _n = _ngram.replace(_ignore_aa, UNKNOWN_AA)
                     ngrams_list.append(_n)
 
             self.ngrams_list = set(ngrams_list)
@@ -250,13 +251,14 @@ class Ngram_Map:
 
     def to_ngram(self, seq):
         res = []
-        for ig in IGNORE_AA :
-            seq = seq.replace(ig,'_')
+        for ig in IGNORE_AA:
+            seq = seq.replace(ig, '_')
 
         for i in range(len(seq) - self.ngram_len):
-            subseq = seq[i:i+self.ngram_len]
-            res .append(self.aa_ngram_to_id(subseq))
+            subseq = seq[i:i + self.ngram_len]
+            res.append(self.aa_ngram_to_id(subseq))
         return res
+
 
 # ------------------------- #
 
@@ -287,9 +289,9 @@ class BaseDataIterator:
         # start of data file
         self.cur_idx = 0
 
-    def filter_by_seq_len(self,df):
-        df = df[df[self.seq_col_name].str.len() <= self.max_seq_len]
-        return df
+    def filter_by_seq_len(self):
+        self.df = self.df[self.df[self.seq_col_name].str.len() <= self.max_seq_len]
+        return
 
     def convert_seq_to_id(self):
         def pad_seq(res):
@@ -302,7 +304,7 @@ class BaseDataIterator:
             res = self.aa_map_obj.to_onehot(seq)
             return pad_seq(res)
 
-        self.df[self.x_column] = self.df.apply(aux,axis=1)
+        self.df[self.x_column] = self.df.apply(aux, axis=1)
         return
 
     def convert_seq_to_ngram_id(self):
@@ -317,7 +319,7 @@ class BaseDataIterator:
             res = self.ngram_map_obj.to_ngram(seq)
             return pad_seq(res)
 
-        self.df[self.x_column] = self.df.apply(aux,axis=1)
+        self.df[self.x_column] = self.df.apply(aux, axis=1)
         return
 
     def format_x(self):
@@ -330,35 +332,34 @@ class BaseDataIterator:
         return
 
     def format_batch_data(self, _df):
-        print('format_batch_data >> batch length', len(_df))
         y = list(_df[self.y_column])
         y = np.asarray(y)
-
         x_data = _df[self.x_column].values
         x = np.hstack([np.array(i) for i in x_data])
-        x = np.reshape(x,[self.batch_size,-1])
-        print('X', x.shape)
-        print('Y', y.shape)
-        return x,y
-
+        x = np.reshape(x, [self.batch_size, -1])
+        return x, y
 
     def generate_batch(self):
+        log.info(
+            'Data Iterator object geenrating batch of size :: {}'.format(self.batch_size)
+        )
         start_idx = self.cur_idx
-        end_idx = self.cur_idx + self.batch_size-1
-        if end_idx > len(self.df) :
+        end_idx = self.cur_idx + self.batch_size - 1
+        if end_idx > len(self.df):
             self.reset()
             return self.generate_batch()
 
         tmp_df = self.df.loc[start_idx:end_idx]
-        tmp_df = pd.DataFrame(tmp_df,copy=True)
-        print('generate_batch >>> ',len(tmp_df))
+        tmp_df = pd.DataFrame(tmp_df, copy=True)
         return self.format_batch_data(tmp_df)
 
     def __next__(self):
         return self.generate_batch()
 
+
 class TrainIterator(BaseDataIterator):
     file_path = None
+
     def __init__(
             self,
             functype,
@@ -380,12 +381,22 @@ class TrainIterator(BaseDataIterator):
         return
 
     def read_data(self):
-        file_name = ''.join([str(self.functype),'_','train.pkl'])
-        TrainIterator.file_path = os.path.join(BaseDataIterator.data_loc,file_name)
+        file_name = ''.join([str(self.functype), '_', 'train.pkl'])
+        TrainIterator.file_path = os.path.join(BaseDataIterator.data_loc, file_name)
         self.df = pd.read_pickle(TrainIterator.file_path)
+        self.filter_by_seq_len()
+        log.info(
+            'Train Data size :: {}'.format(len(self.df))
+        )
+
+        print(
+            'Train Data size :: {}'.format(len(self.df))
+        )
+
 
 class TestIterator(BaseDataIterator):
     file_path = None
+
     def __init__(
             self,
             functype,
@@ -401,18 +412,26 @@ class TestIterator(BaseDataIterator):
             seqlen,
             featuretype,
             autoreset)
+        self.read_data()
+        self.format_x()
         return
 
     def read_data(self):
-        file_name = ''.join(str(function),'_','test.pkl')
-        TestIterator.file_path = os.path.join(BaseDataIterator.data_loc,file_name)
+        file_name = ''.join([str(self.functype), '_', 'test.pkl'])
+        TestIterator.file_path = os.path.join(BaseDataIterator.data_loc, file_name)
         self.df = pd.read_pickle(TestIterator.file_path)
 
         # filter data by sequence length
-        self.df = self.filter_by_seq_len(self.df)
+        self.filter_by_seq_len()
+        log.info(
+            'Test Data size :: {}'.format(len(self.df))
+        )
+        print('Test Data size :: {}'.format(len(self.df)))
 
-class ValIterator(BaseDataIterator):
+
+class ValidIterator(BaseDataIterator):
     file_path = None
+
     def __init__(
             self,
             functype,
@@ -428,16 +447,39 @@ class ValIterator(BaseDataIterator):
             seqlen,
             featuretype,
             autoreset)
+        self.read_data()
+        self.format_x()
         return
 
     def read_data(self):
-        file_name = ''.join(str(function),'_','val.pkl')
-        ValIterator.file_path = os.path.join(BaseDataIterator.data_loc,file_name)
-        self.df = pd.read_pickle(ValIterator.file_path)
+        file_name = ''.join([str(self.functype), '_', 'val.pkl'])
+        ValidIterator.file_path = os.path.join(BaseDataIterator.data_loc, file_name)
+        self.df = pd.read_pickle(ValidIterator.file_path)
+        self.filter_by_seq_len()
+        log.info(
+            'Validation Data size :: {}'.format(len(self.df))
+        )
+        print('Validation Data size :: {}'.format(len(self.df)))
 
 
-ti = TrainIterator('MF',100,featuretype='ngrams')
-x, y = ti.__next__()
-print(x.shape, y.shape)
-x, y = ti.__next__()
-print(x.shape, y.shape)
+def functional_test():
+    ti = TrainIterator('MF', 256, featuretype='ngrams')
+    x, y = ti.__next__()
+    print(x.shape, y.shape)
+    x, y = ti.__next__()
+    print(x.shape, y.shape)
+
+    ti = ValidIterator('MF', 384, featuretype='ngrams')
+    x, y = ti.__next__()
+    print(x.shape, y.shape)
+    x, y = ti.__next__()
+    print(x.shape, y.shape)
+
+    ti = TestIterator('BP', 32, featuretype='ngrams')
+    x, y = ti.__next__()
+    print(x.shape, y.shape)
+    x, y = ti.__next__()
+    print(x.shape, y.shape)
+
+
+functional_test()
