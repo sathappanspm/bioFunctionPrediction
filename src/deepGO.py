@@ -27,6 +27,7 @@ import logging
 import os
 import numpy as np
 from predict import predict_evaluate
+import  utils.experimental_datareader as new_dataloader
 
 #handler = logging.FileHandler('{}.log'.format(__processor__))
 logging.basicConfig(level=logging.INFO)
@@ -139,20 +140,9 @@ def main(argv):
         FeatureExtractor.ngrammap = ngrammap
 
     with tf.Session() as sess:
-        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize, seqlen=FLAGS.maxseqlen,
-                                      dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                      filename='validation', filterByEvidenceCodes=True)
-
-
-        train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
-                                  seqlen=FLAGS.maxseqlen, dataloader=data,
-                                  filename='train', filterByEvidenceCodes=True,
-                                  functype=FLAGS.function, featuretype='ngrams')
-
-        encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap),
-                             inputsize=train_iter.expectedshape,
-                             pretrained_embedding=pretrained).build()
-
+        valid_dataiter = new_dataloader.ValidIterator( functype = FLAGS.function, batch_size = FLAGS.batchsize, featuretype = 'ngram', seqlen=FLAGS.maxseqlen , max_batch_count = FLAGS.validationsize )  
+        train_iter = new_dataloader.TrainIterator( functype = FLAGS.function, batch_size = FLAGS.batchsize, featuretype = 'ngram', seqlen=FLAGS.maxseqlen, max_batch_count = FLAGS.trainsize )
+        encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap),inputsize=train_iter.expectedshape,pretrained_embedding=pretrained).build()
         log.info('built encoder')
         decoder = HierarchicalGODecoder(funcs, encoder.outputs, root=FLAGS.function).build(GODAG)
         log.info('built decoder')
@@ -177,6 +167,7 @@ def main(argv):
             for x, y in train_iter:
                 if x.shape[0] != y.shape[0]:
                     raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
+                print( '---->', x.shape,y.shape)
 
                 _, loss, summary = sess.run([decoder.train, decoder.loss, decoder.summary],
                                             feed_dict={decoder.ys_: y, encoder.xs_: x,
@@ -208,11 +199,9 @@ def main(argv):
                             break
 
             train_iter.reset()
-
+    
     log.info('testing model')
-    test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize, seqlen=FLAGS.maxseqlen,
-                                 dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                 filename='test', filterByEvidenceCodes=True)
+    test_dataiter = new_dataloader.TestIterator( functype = FLAGS.function, batch_size = FLAGS.batchsize, featuretype = 'ngram', seqlen=FLAGS.maxseqlen, max_batch_count = FLAGS.trainsize )
 
     placeholders = ['x_in:0', 'y_out:0', 'thres:0']
     prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], placeholders, os.path.join(FLAGS.outputdir, modelsavename))

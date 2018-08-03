@@ -62,6 +62,9 @@ data_dir = os.path.join(os.path.dirname(__file__), './../../resources/data/data_
 
 
 def download_data():
+    disp_msg = 'In download_data'
+    log.info(disp_msg)
+    print(disp_msg)
     global orig_file_dir
     if not os.path.isdir(orig_file_dir):
         os.mkdir(orig_file_dir)
@@ -99,6 +102,10 @@ We combine these and set up train , test, validations sets
 
 
 def combine_data():
+    disp_msg = 'In combine_data'
+    log.info(disp_msg)
+    print(disp_msg)
+
     global CAT_GO
     global ORIG_SETS
     global data_dir
@@ -125,7 +132,7 @@ def combine_data():
 
         for k, _df in _ref.items():
             _df = _df.reset_index()
-            file_name = ''.join([_go, '_', k, '.pkl'])
+            file_name = ''.join([_go.upper(), '_', k, '.pkl'])
             res_path = os.path.join(data_dir, file_name)
             _df.to_pickle(res_path)
 
@@ -270,24 +277,35 @@ class BaseDataIterator:
             self,
             functype,
             batch_size,
+            max_batch_count = None,
             seqlen=2000,
             featuretype='onehot',
             autoreset=False,
     ):
         self.featuretype = featuretype
-        self.functype = functype
+        self.functype = functype.upper()
         self.max_seq_len = seqlen
         self.seq_col_name = 'sequences'
         self.batch_size = batch_size
         self.aa_map_obj = Amino_Acid_Map()
         self.ngram_map_obj = Ngram_Map()
         self.y_column = 'labels'
+        self.autoreset = autoreset
+        self.max_batch_count = max_batch_count
+        self.batch_count = 0
         self.reset()
+        self.ngram_size = 3
+        self.expectedshape = ((self.max_seq_len - self.ngram_size + 1) if self.featuretype == 'ngrams' else self.max_seq_len)
+        self.x_column = 'sequences'
         return
+
+    def __iter__(self):
+        return self
 
     def reset(self):
         # start of data file
         self.cur_idx = 0
+        self.batch_count = 0
 
     def filter_by_seq_len(self):
         self.df = self.df[self.df[self.seq_col_name].str.len() <= self.max_seq_len]
@@ -310,7 +328,7 @@ class BaseDataIterator:
     def convert_seq_to_ngram_id(self):
 
         def pad_seq(res):
-            pad = [0] * (self.max_seq_len - len(res))
+            pad = [0] * (self.expectedshape - len(res))
             res.extend(pad)
             return res
 
@@ -324,10 +342,8 @@ class BaseDataIterator:
 
     def format_x(self):
         if self.featuretype == 'onehot':
-            self.x_column = 'sequences'
             self.convert_seq_to_id()
         elif self.featuretype == 'ngrams':
-            self.x_column = 'sequences'
             self.convert_seq_to_ngram_id()
         return
 
@@ -343,12 +359,18 @@ class BaseDataIterator:
         log.info(
             'Data Iterator object geenrating batch of size :: {}'.format(self.batch_size)
         )
+
         start_idx = self.cur_idx
         end_idx = self.cur_idx + self.batch_size - 1
-        if end_idx > len(self.df):
-            self.reset()
-            return self.generate_batch()
+        if (self.batch_count + 1) > self.max_batch_count:
+            if self.autoreset:
+                self.reset()
+                start_idx = self.cur_idx
+                end_idx = self.cur_idx + self.batch_size - 1
+            else:
+                raise StopIteration
 
+        self.batch_count += 1
         tmp_df = self.df.loc[start_idx:end_idx]
         tmp_df = pd.DataFrame(tmp_df, copy=True)
         return self.format_batch_data(tmp_df)
@@ -356,6 +378,9 @@ class BaseDataIterator:
     def __next__(self):
         return self.generate_batch()
 
+    def set_batch_limit(self):
+        if self.max_batch_count == None:
+            self.max_batch_count = len(self.df)/self.batch_size
 
 class TrainIterator(BaseDataIterator):
     file_path = None
@@ -364,6 +389,7 @@ class TrainIterator(BaseDataIterator):
             self,
             functype,
             batch_size,
+            max_batch_count = None,
             seqlen=2000,
             featuretype='onehot',
             autoreset=False,
@@ -372,12 +398,14 @@ class TrainIterator(BaseDataIterator):
             self,
             functype,
             batch_size,
+            max_batch_count,
             seqlen,
             featuretype,
             autoreset
         )
         self.read_data()
         self.format_x()
+        self.set_batch_limit()
         return
 
     def read_data(self):
@@ -388,7 +416,6 @@ class TrainIterator(BaseDataIterator):
         log.info(
             'Train Data size :: {}'.format(len(self.df))
         )
-
         print(
             'Train Data size :: {}'.format(len(self.df))
         )
@@ -401,6 +428,7 @@ class TestIterator(BaseDataIterator):
             self,
             functype,
             batch_size,
+            max_batch_count=None,
             seqlen=2000,
             featuretype='onehot',
             autoreset=False,
@@ -409,11 +437,13 @@ class TestIterator(BaseDataIterator):
             self,
             functype,
             batch_size,
+            max_batch_count,
             seqlen,
             featuretype,
             autoreset)
         self.read_data()
         self.format_x()
+        self.set_batch_limit()
         return
 
     def read_data(self):
@@ -436,6 +466,7 @@ class ValidIterator(BaseDataIterator):
             self,
             functype,
             batch_size,
+            max_batch_count=None,
             seqlen=2000,
             featuretype='onehot',
             autoreset=False,
@@ -444,11 +475,13 @@ class ValidIterator(BaseDataIterator):
             self,
             functype,
             batch_size,
+            max_batch_count,
             seqlen,
             featuretype,
             autoreset)
         self.read_data()
         self.format_x()
+        self.set_batch_limit()
         return
 
     def read_data(self):
@@ -482,4 +515,12 @@ def functional_test():
     print(x.shape, y.shape)
 
 
+def iter_test():
+    ti = TrainIterator('MF', 256, featuretype='ngrams',max_batch_count = 100)
+    for x, y in ti:
+        print(x.shape, y.shape)
+
+# ----- #
+
+# iter_test()
 functional_test()
