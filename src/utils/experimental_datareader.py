@@ -1,3 +1,8 @@
+#-*- coding:utf-8 -*-
+__author__ = "Debanjan Datta"
+__email__ = "ddatta@vt.edu"
+__version__ = "0.0.1"
+
 import glob
 import pandas as pd
 from pprint import pprint
@@ -8,7 +13,7 @@ import json
 import logging
 import tarfile
 import wget
-
+import pickle
 
 log = logging.getLogger('root.DataLoader')
 
@@ -25,7 +30,8 @@ These are delegated to the id  k+1
 # Checks put in place
 # --------------------------------- #
 
-IGNORE_AA = ('B', 'O', 'J', 'X', 'U','Z')
+IGNORE_AA = ('B', 'O', 'J', 'X', 'U', 'Z')
+UNKNOWN_AA = '_'
 CAT_GO = ('BP', 'MF')
 ORIG_SETS = ('test', 'train')
 # ---- #
@@ -180,6 +186,78 @@ class Amino_Acid_Map:
         return  res
 
 # ------------------------- #
+class Ngram_Map:
+
+    def __init__(self):
+        self.ngram_len = 3
+        self.ngram_map = {}
+        self.load()
+        return
+
+    def load(self):
+        global IGNORE_AA
+        global UNKNOWN_AA
+        ngrams_file = 'ngrams_21_aa.json'
+
+        if os.path.isfile(ngrams_file):
+            data_dir = os.path.join(os.path.dirname(__file__), './../../resources')
+            inp_file = open(os.path.join(data_dir, ngrams_file), 'r')
+            with open(inp_file, 'r') as file_handle:
+                self.ngram_map = json.load(file_handle)
+            pprint(self.ngram_map)
+
+        else:
+            data_dir = os.path.join(os.path.dirname(__file__), './../../resources')
+            inp_file = os.path.join(data_dir, 'ngrams.txt')
+            file_handle = open(inp_file, 'r')
+            ngrams = json.load(file_handle)
+
+            ngrams_list = []
+            for _ngram in ngrams:
+                for _ignore_aa in IGNORE_AA:
+                    _n = _ngram.replace(_ignore_aa ,UNKNOWN_AA)
+                    ngrams_list.append(_n)
+
+            self.ngrams_list = set(ngrams_list)
+            log.info(
+                'loaded amino acid ngram map of size-{}'.format(len(self.ngrams_list))
+            )
+            id = 1
+            for ng in self.ngrams_list:
+                self.ngram_map[id] = ng
+                id += 1
+            self.ngram_map['___'] = id
+
+            data_dir = os.path.join(os.path.dirname(__file__), './../../resources')
+            inp_file = os.path.join(data_dir, ngrams_file)
+            file_handle = open(inp_file, 'w')
+            json.dump(self.ngram_map, file_handle)
+
+        return
+
+    def aa_ngram_to_id(self, amino_acid):
+        print (self.ngram_map.keys())
+        if amino_acid not in self.ngram_map:
+            log.info('unable to find {} in known aminoacids'.format(amino_acid))
+            amino_acid = '___'
+        return self.ngram_map[amino_acid]
+
+    def to_ngram(self, seq):
+        res = []
+        for ig in IGNORE_AA :
+            seq = seq.replace(ig,'_')
+
+        for i in range(len(seq) - self.ngram_len):
+            subseq = seq[i:i+self.ngram_len]
+            print(subseq)
+            res .append(self.aa_ngram_to_id(subseq))
+
+        print ( seq , res )
+        exit(1)
+        return res
+
+# ------------------------- #
+
 class BaseDataIterator:
     global data_dir
     data_loc = os.path.join(os.path.dirname(__file__), data_dir)
@@ -198,6 +276,7 @@ class BaseDataIterator:
         self.seq_col_name = 'sequences'
         self.batch_size = batch_size
         self.aa_map_obj = Amino_Acid_Map()
+        self.ngram_map_obj = Ngram_Map()
         self.y_column = 'labels'
         self.reset()
         return
@@ -209,7 +288,6 @@ class BaseDataIterator:
     def filter_by_seq_len(self,df):
         df = df[df[self.seq_col_name].str.len() <= self.max_seq_len]
         return df
-
 
     def convert_seq_to_id(self):
         def pad_seq(res):
@@ -225,16 +303,31 @@ class BaseDataIterator:
         self.df[self.x_column] = self.df.apply(aux,axis=1)
         return
 
+    def convert_seq_to_ngram_id(self):
+
+        def pad_seq(res):
+            pad = [0] * (self.max_seq_len - len(res))
+            res.extend(pad)
+            return res
+
+        def aux(row):
+            seq = row[self.x_column]
+            res = self.ngram_map_obj.to_ngram(seq)
+            return pad_seq(res)
+
+        self.df[self.x_column] = self.df.apply(aux,axis=1)
+        return
+
     def format_x(self):
         if self.featuretype == 'onehot':
             self.x_column = 'sequences'
             self.convert_seq_to_id()
         elif self.featuretype == 'ngrams':
-            self.x_column = 'ngrams'
+            self.x_column = 'sequences'
+            self.convert_seq_to_ngram_id()
         return
 
     def format_batch_data(self, _df):
-
         print('format_batch_data >> batch length', len(_df))
         y = list(_df[self.y_column])
         y = np.asarray(y)
@@ -289,8 +382,6 @@ class TrainIterator(BaseDataIterator):
         TrainIterator.file_path = os.path.join(BaseDataIterator.data_loc,file_name)
         self.df = pd.read_pickle(TrainIterator.file_path)
 
-
-
 class TestIterator(BaseDataIterator):
     file_path = None
     def __init__(
@@ -343,7 +434,9 @@ class ValIterator(BaseDataIterator):
         self.df = pd.read_pickle(ValIterator.file_path)
 
 
-ti = TrainIterator('MF',100)
+ti = TrainIterator('MF',100,featuretype='ngrams')
 x, y = ti.__next__()
 print(x.shape, y.shape)
 x, y = ti.__next__()
+
+print (x[10])
