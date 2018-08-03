@@ -57,7 +57,7 @@ file_name_dict_x = {
     }
 }
 
-orig_file_dir = os.path.join(os.path.dirname(__file__), './../../resources/data/data_orig_paper')
+orig_file_dir = os.path.join(os.path.dirname(__file__), './../../resources/data/data_orig_paper/train')
 data_dir = os.path.join(os.path.dirname(__file__), './../../resources/data/data_paper')
 
 
@@ -67,7 +67,7 @@ def download_data():
         os.mkdir(orig_file_dir)
     else:
         return
-    os.chdir()
+    os.chdir(orig_file_dir)
     urls = [
         'http://deepgo.bio2vec.net/data/train.tar.gz',
         'http://deepgo.bio2vec.net/data/test.fa'
