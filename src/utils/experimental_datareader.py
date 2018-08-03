@@ -6,6 +6,9 @@ import os
 import numpy as np
 import json
 import logging
+import tarfile
+import wget
+
 
 log = logging.getLogger('root.DataLoader')
 
@@ -56,6 +59,21 @@ def download_data():
     global orig_file_dir
     if not os.path.isdir(orig_file_dir):
         os.mkdir(orig_file_dir)
+    else:
+        return
+    os.chdir()
+    urls = [
+        'http://deepgo.bio2vec.net/data/train.tar.gz',
+        'http://deepgo.bio2vec.net/data/test.fa'
+    ]
+
+    for url in urls:
+        fname = wget.download(url)
+        if(fname.endswith("tar.gz")):
+            tar = tarfile.open(fname, "r:gz")
+            tar.extractall()
+            tar.close()
+    return
 
 
 def get_file(cat_go, _set='train'):
