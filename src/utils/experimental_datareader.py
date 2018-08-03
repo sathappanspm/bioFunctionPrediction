@@ -294,6 +294,9 @@ class BaseDataIterator:
         self.max_batch_count = max_batch_count
         self.batch_count = 0
         self.reset()
+        self.ngram_size = 3
+        self.expectedshape = ((self.max_seq_len - self.ngram_size + 1) if self.featuretype == 'ngrams' else self.max_seq_len)
+        self.x_column = 'sequences'
         return
 
     def __iter__(self):
@@ -325,7 +328,7 @@ class BaseDataIterator:
     def convert_seq_to_ngram_id(self):
 
         def pad_seq(res):
-            pad = [0] * (self.max_seq_len - len(res))
+            pad = [0] * (self.expectedshape - len(res))
             res.extend(pad)
             return res
 
@@ -339,10 +342,8 @@ class BaseDataIterator:
 
     def format_x(self):
         if self.featuretype == 'onehot':
-            self.x_column = 'sequences'
             self.convert_seq_to_id()
         elif self.featuretype == 'ngrams':
-            self.x_column = 'sequences'
             self.convert_seq_to_ngram_id()
         return
 
