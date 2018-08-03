@@ -190,7 +190,7 @@ class Ngram_Map:
 
     def __init__(self):
         self.ngram_len = 3
-        self.ngram_map = {}
+        self.ngram_map = None
         self.load()
         return
 
@@ -199,19 +199,18 @@ class Ngram_Map:
         global UNKNOWN_AA
         ngrams_file = 'ngrams_21_aa.json'
 
-        if os.path.isfile(ngrams_file):
-            data_dir = os.path.join(os.path.dirname(__file__), './../../resources')
-            inp_file = open(os.path.join(data_dir, ngrams_file), 'r')
-            with open(inp_file, 'r') as file_handle:
-                self.ngram_map = json.load(file_handle)
-            pprint(self.ngram_map)
-
+        ngrams_file_path = os.path.join(os.path.join(os.path.dirname(__file__), './../../resources'),ngrams_file)
+        if os.path.isfile(ngrams_file_path):
+            with open(ngrams_file_path, 'r') as file_handle:
+                json_str = file_handle.read()
+                self.ngram_map = json.loads(json_str)
         else:
             data_dir = os.path.join(os.path.dirname(__file__), './../../resources')
             inp_file = os.path.join(data_dir, 'ngrams.txt')
             file_handle = open(inp_file, 'r')
             ngrams = json.load(file_handle)
 
+            # Replace ignored char with _
             ngrams_list = []
             for _ngram in ngrams:
                 for _ignore_aa in IGNORE_AA:
@@ -219,24 +218,31 @@ class Ngram_Map:
                     ngrams_list.append(_n)
 
             self.ngrams_list = set(ngrams_list)
+
+            self.ngram_map = {}
             log.info(
-                'loaded amino acid ngram map of size-{}'.format(len(self.ngrams_list))
+                'loaded amino acid ngram list of size-{}'.format(len(self.ngrams_list))
             )
             id = 1
             for ng in self.ngrams_list:
-                self.ngram_map[id] = ng
+                self.ngram_map[ng] = id
                 id += 1
-            self.ngram_map['___'] = id
+
+            if '___' not in self.ngram_map.keys():
+                self.ngram_map['___'] = id
+            log.info(
+                'loaded amino acid ngram map of size-{}'.format(len(self.ngram_map))
+            )
 
             data_dir = os.path.join(os.path.dirname(__file__), './../../resources')
             inp_file = os.path.join(data_dir, ngrams_file)
+            json_data = json.dumps(self.ngram_map)
             file_handle = open(inp_file, 'w')
-            json.dump(self.ngram_map, file_handle)
-
+            file_handle.write(json_data)
+            file_handle.close()
         return
 
     def aa_ngram_to_id(self, amino_acid):
-        print (self.ngram_map.keys())
         if amino_acid not in self.ngram_map:
             log.info('unable to find {} in known aminoacids'.format(amino_acid))
             amino_acid = '___'
@@ -249,11 +255,7 @@ class Ngram_Map:
 
         for i in range(len(seq) - self.ngram_len):
             subseq = seq[i:i+self.ngram_len]
-            print(subseq)
             res .append(self.aa_ngram_to_id(subseq))
-
-        print ( seq , res )
-        exit(1)
         return res
 
 # ------------------------- #
@@ -438,5 +440,4 @@ ti = TrainIterator('MF',100,featuretype='ngrams')
 x, y = ti.__next__()
 print(x.shape, y.shape)
 x, y = ti.__next__()
-
-print (x[10])
+print(x.shape, y.shape)
