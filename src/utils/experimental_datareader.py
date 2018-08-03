@@ -125,7 +125,7 @@ def combine_data():
 
         for k, _df in _ref.items():
             _df = _df.reset_index()
-            file_name = ''.join([_go, '_', k, '.pkl'])
+            file_name = ''.join([_go.upper(), '_', k, '.pkl'])
             res_path = os.path.join(data_dir, file_name)
             _df.to_pickle(res_path)
 
@@ -275,7 +275,7 @@ class BaseDataIterator:
             autoreset=False,
     ):
         self.featuretype = featuretype
-        self.functype = functype
+        self.functype = functype.upper()
         self.max_seq_len = seqlen
         self.seq_col_name = 'sequences'
         self.batch_size = batch_size
