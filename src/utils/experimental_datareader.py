@@ -481,5 +481,11 @@ def functional_test():
     x, y = ti.__next__()
     print(x.shape, y.shape)
 
+def iter_test():
+    ti = TrainIterator('MF', 256, featuretype='ngrams')
+    for  x, y in  ti.__next__():
+        print(x.shape, y.shape)
 
-functional_test()
+
+iter_test()
+#functional_test()
