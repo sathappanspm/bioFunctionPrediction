@@ -100,7 +100,6 @@ The original paper uses train and test sets.
 We combine these and set up train , test, validations sets
 '''
 
-
 def combine_data():
     disp_msg = 'In combine_data'
     log.info(disp_msg)
@@ -297,6 +296,8 @@ class BaseDataIterator:
         self.ngram_size = 3
         self.expectedshape = ((self.max_seq_len - self.ngram_size + 1) if self.featuretype == 'ngrams' else self.max_seq_len)
         self.x_column = 'sequences'
+        self.input_column = 'x'
+        print('Expected shape', self.expectedshape , 'x_column', self.x_column)
         return
 
     def __iter__(self):
@@ -312,45 +313,56 @@ class BaseDataIterator:
         return
 
     def convert_seq_to_id(self):
-        def pad_seq(res):
+        def pad_seq_1(res):
             pad = [0] * (self.max_seq_len - len(res))
             res.extend(pad)
             return res
 
-        def aux(row):
+        def aux_1(row):
             seq = row[self.x_column]
             res = self.aa_map_obj.to_onehot(seq)
             return pad_seq(res)
-
-        self.df[self.x_column] = self.df.apply(aux, axis=1)
-        return
+        
+        _df = pd.DataFrame(self.df,copy=True)
+        _df['x'] = self.df.apply(aux_1, axis=1)
+        return _df
 
     def convert_seq_to_ngram_id(self):
 
-        def pad_seq(res):
+        def pad_seq_2(res):
             pad = [0] * (self.expectedshape - len(res))
             res.extend(pad)
             return res
 
-        def aux(row):
+        def aux_2(row):
             seq = row[self.x_column]
             res = self.ngram_map_obj.to_ngram(seq)
-            return pad_seq(res)
+            res = pad_seq_2(res)
+            return res
 
-        self.df[self.x_column] = self.df.apply(aux, axis=1)
-        return
+        _df = pd.DataFrame(self.df,copy=True)
+        _df['x'] = _df.apply(aux_2, axis=1)
+        return _df
 
     def format_x(self):
         if self.featuretype == 'onehot':
-            self.convert_seq_to_id()
+            _df = self.convert_seq_to_id()
         elif self.featuretype == 'ngrams':
-            self.convert_seq_to_ngram_id()
-        return
+            _df = self.convert_seq_to_ngram_id()
+        else:
+            log.error( 'Wrong Feature type :: ' + self.featuretype)
+            exit(2) 
+        try:
+            del _df[self.x_column]
+            del _df['ngrams']
+        except:
+            pass
+        return _df
 
     def format_batch_data(self, _df):
         y = list(_df[self.y_column])
         y = np.asarray(y)
-        x_data = _df[self.x_column].values
+        x_data = _df[self.input_column].values
         x = np.hstack([np.array(i) for i in x_data])
         x = np.reshape(x, [self.batch_size, -1])
         return x, y
@@ -404,7 +416,7 @@ class TrainIterator(BaseDataIterator):
             autoreset
         )
         self.read_data()
-        self.format_x()
+        self.df = self.format_x()
         self.set_batch_limit()
         return
 
@@ -416,11 +428,8 @@ class TrainIterator(BaseDataIterator):
         log.info(
             'Train Data size :: {}'.format(len(self.df))
         )
-        print(
-            'Train Data size :: {}'.format(len(self.df))
-        )
-
-
+        return
+		
 class TestIterator(BaseDataIterator):
     file_path = None
 
@@ -442,7 +451,7 @@ class TestIterator(BaseDataIterator):
             featuretype,
             autoreset)
         self.read_data()
-        self.format_x()
+        self.df = self.format_x()
         self.set_batch_limit()
         return
 
@@ -456,7 +465,6 @@ class TestIterator(BaseDataIterator):
         log.info(
             'Test Data size :: {}'.format(len(self.df))
         )
-        print('Test Data size :: {}'.format(len(self.df)))
 
 
 class ValidIterator(BaseDataIterator):
@@ -480,7 +488,7 @@ class ValidIterator(BaseDataIterator):
             featuretype,
             autoreset)
         self.read_data()
-        self.format_x()
+        self.df = self.format_x()
         self.set_batch_limit()
         return
 
@@ -492,7 +500,6 @@ class ValidIterator(BaseDataIterator):
         log.info(
             'Validation Data size :: {}'.format(len(self.df))
         )
-        print('Validation Data size :: {}'.format(len(self.df)))
 
 
 def functional_test():
