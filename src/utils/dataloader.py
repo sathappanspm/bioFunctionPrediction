@@ -25,7 +25,7 @@ import json
 import os
 import sys
 import pandas as pd
-import pdb
+import ipdb as pdb
 
 random.seed(1)
 #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -33,6 +33,7 @@ log = logging.getLogger('root.DataLoader')
 
 DATADIR = os.path.join(os.path.dirname(__file__), '../../resources/')
 EVIDENCE_CODES = ['EXP', 'IDA', 'IPI', 'IMP', 'IGI', 'IEP', 'TAS', 'IC']
+GOFUNCMAT = None # GODAG.build_connectionMat(GODAG.GOIDS)
 BIOLOGICAL_PROCESS = 'GO:0008150'
 MOLECULAR_FUNCTION = 'GO:0003674'
 CELLULAR_COMPONENT = 'GO:0005575'
@@ -175,11 +176,15 @@ class GODAG(object):
             GODAG.GOIDS = [item[0] for item in tmp]
             updatedIdlist = (GODAG.GOIDS).copy()
 
+        #pdb.set_trace()
         GODAG.GOIDS += list(goset)
         for id in goset:
             GODAG.idmap[GODAG.get(id)] = len(GODAG.idmap)
 
         log.info('GO data loaded. Total nodes -{}'.format(len(GODAG.idmap)))
+        global GOFUNCMAT
+        GOFUNCMAT = GODAG.build_connectionMat(GODAG.GOIDS)
+        log.info('built connection matrix -{}'.format(GOFUNCMAT.shape))
         return updatedIdlist
 
     @staticmethod
@@ -236,7 +241,8 @@ class GODAG(object):
         try:
             return GODAG.idmap[GODAG.get(node)]
         except KeyError as e:
-            log.info('unable to find key -{}'.format(str(e)))
+            #log.info('unable to find key -{}'.format(str(e)))
+            pass
 
         return -1
 
@@ -263,17 +269,39 @@ class GODAG(object):
 
     @staticmethod
     def get_fullmat(funcids):
-        funclabels = [GODAG.id2node(i) for i in funcids]
-        return np.any(GODAG.vfunc(np.array(GODAG.GOIDS)[:, np.newaxis], funclabels), axis=0)
+        # if isinstance(funcids[0][0], int):
+        #     funclabels = [GODAG.id2node(i) for i in funcids]
+        # else:
+        #     funclabels = funcids
+        ids = [GODAG.get_id(node) for node in set(funcids)]
+        return np.any(GOFUNCMAT[[i for i in ids if i!=-1]], axis=0)
+        # return np.any(GODAG.vfunc(np.array(GODAG.GOIDS)[:, np.newaxis], funclabels), axis=0)
+
+    @staticmethod
+    def build_connectionMat(funcids):
+        go_adj = nx.adjacency_matrix(GODAG.isagraph.reverse(), nodelist=GODAG.GOIDS)
+        Flag =  True
+        go_adj.setdiag(1)
+        adj_prev = go_adj
+        while Flag:
+            go_adj = go_adj * go_adj
+            if np.all((go_adj > 0).sum(axis=1) == (adj_prev > 0).sum(axis=1)):
+                Flag = False
+
+            log.info('calculating power of adj matrix')
+            adj_prev = go_adj
+
+        return (go_adj > 0).todense()
+        # return np.any(GODAG.vfunc(np.array(GODAG.GOIDS)[:, np.newaxis], funclabels), axis=0)
 
 
 
-def get_fullhierarchy(node, godag=None):
-    mat = np.zeros(len(godag.GOIDS), dtype=np.bool_)
-    mat[[GODAG.get_id(parent) for parent in GODAG.get_ancestors(GODAG.id2node(node))]] = True
-    return mat
+# def get_fullhierarchy(node, godag=None):
+#     mat = np.zeros(len(godag.GOIDS), dtype=np.bool_)
+#     mat[[GODAG.get_id(parent) for parent in GODAG.get_ancestors(GODAG.id2node(node))]] = True
+#     return mat
 
-vectorized_getlabelmat = np.vectorize(partial(get_fullhierarchy, godag=GODAG), otypes=[np.bool_], signature='()->(m)')
+# vectorized_getlabelmat = np.vectorize(partial(get_fullhierarchy, godag=GODAG), otypes=[np.bool_], signature='()->(m)')
 
 
 class FeatureExtractor():
@@ -340,12 +368,14 @@ class DataLoader(object):
         else:
             if filename.endswith('.tar') or filename.endswith('.tar.gz'):
                 self.tarobj = tarfile.open(filename)
-                self.members = [fl for fl in self.tarobj.getmembers() if fl.isfile()]
+                self.members = [fl.name for fl in self.tarobj.getmembers() if fl.isfile()]
             else:
                 self.tarobj = filename
                 self.members = glob.glob('{}/*'.format(filename))
 
         self.openfiles = dict()
+        #self.gofuncmat = GODAG.build_connectionMat(GODAG.GOIDS)
+        #ipdb.set_trace()
 
     def getmember(self, member):
         """
@@ -368,7 +398,7 @@ class DataLoader(object):
             # fobj = gzip.open(self.tarobj.extractfile(member),
             #                   mode='rt')
 
-            fobj = smart_open(self.tarobj.extractfile(member),
+            fobj = gzip.open(self.tarobj.extractfile(member),
                               mode='rt')
 
         self.openfiles[memname] = fobj
@@ -460,7 +490,9 @@ class DataIterator(object):
                     ids = [GODAG.get_id(fn) for fn in funcs]
                     labels.append([i for i  in ids  if i != -1])
                 else:
-                    labels.append(GODAG.to_npy(funcs))
+                    # labels.append(GODAG.to_npy(funcs))
+                    #pdb.set_trace()
+                    labels.append(GODAG.get_fullmat(funcs))
 
                 inputs.append(self.featureExt(seq))
             except Exception as e:
@@ -501,7 +533,9 @@ class DataIterator(object):
 
     def _format(self, inputs, labels):
         inputs = pd.DataFrame(inputs, dtype=np.int32).fillna(0)
+        #pdb.set_trace()
         if isinstance(labels[0], list):
+            #labels = GODAG.get_fullmat(labels)
             labels = pd.DataFrame(labels, dtype=np.int32).fillna(0, downcast='infer').as_matrix()
             if labels.shape[1] < self.numfuncs:
                 diff = self.numfuncs - labels.shape[1]
@@ -509,6 +543,8 @@ class DataIterator(object):
             #log.info('percentage of zeros in labelspace-{}/160'.format((labels==0).sum()))
         else:
             labels = np.vstack(labels)
+            if not np.any(labels):
+                log.info("no label info in batch")
 
         # log.info('{}'.format(str(inputs.shape)))
         if inputs.shape[1] < self.expectedshape:
