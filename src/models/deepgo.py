@@ -12,7 +12,10 @@ __version__ = "0.0.1"
 
 
 import tensorflow as tf
-from tensorflow import keras
+try:
+    from tensorflow import keras
+except:
+    import keras
 import logging
 from collections import deque
 # from keras.callbacks import EarlyStopping, ModelCheckpoint
@@ -37,7 +40,8 @@ FUNC_DICT = { #'cc': CELLULAR_COMPONENT,
 
 class KerasDeepGO(object):
     def __init__(self, functions, root,
-                 godag, maxlen, ngramsize, pretrained_embedding=None):
+                 godag, maxlen, ngramsize, pretrained_embedding=None,
+                 embedding_size=256):
         self.functions = functions
         self.root = root
         self.godag = godag
@@ -79,13 +83,26 @@ class KerasDeepGO(object):
             #self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
             #cnn_inputs = tf.nn.embedding_lookup(self.emb, self.xs_, name='cnn_in')
 
-        model.add(keras.layers.Convolution1D(
-            filters=32,
-            kernel_size=128,
-            padding='valid',
-            activation='relu',
-            strides=1))
-        model.add(keras.layers.MaxPooling1D(pool_size=64, strides=32))
+        try:
+            model.add(keras.layers.Convolution1D(
+                filters=32,
+                kernel_size=128,
+                padding='valid',
+                activation='relu',
+                strides=1))
+        except:
+            model.add(keras.layers.Convolution1D(
+                nb_filter=32,
+                filter_length=128,
+                border_mode='valid',
+                activation='relu',
+                subsample_length=1))
+
+        try:
+            model.add(keras.layers.MaxPooling1D(pool_length=64, stride=32))
+        except:
+            model.add(keras.layers.MaxPooling1D(pool_size=64, strides=32))
+
         model.add(keras.layers.Flatten())
         return model
 
