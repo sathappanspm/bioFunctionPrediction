@@ -53,7 +53,7 @@ class CNNEncoder(object):
 
         self.emb = tf.reshape(mask, shape=[-1, 1]) * self.emb
         ## cnn kernel takes in shape [size,  (input channels, output channels)]
-        self.cnnkernel = tf.get_variable('kernel', [self.kernelsize, self.embedding_size, self.filternum],
+        self.cnnkernel = tf.get_variable('cnnkernel', [self.kernelsize, self.embedding_size, self.filternum],
                                          dtype=tf.float32)
 
 

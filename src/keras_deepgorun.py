@@ -19,7 +19,10 @@ import logging
 import time
 import pandas as pd
 import tensorflow as tf
-from tensorflow import keras
+try:
+    from tensorflow import keras
+except:
+    import keras
 from utils.dataloader import GODAG, FeatureExtractor
 from utils.dataloader import DataIterator, DataLoader, load_pretrained_embedding
 from models.deepgo import KerasDeepGO
@@ -150,17 +153,19 @@ def main(argv):
         log.info('initializing validation data')
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams',numfuncs=len(funcs),
-                                      all_labels=False, autoreset=True)
+                                      all_labels=False, filename='validation', filterByEvidenceCodes=True)
 
         log.info('initializing train data')
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
-                                  seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4, numfuncs=len(funcs),
-                                  functype=FLAGS.function, featuretype='ngrams', all_labels=False, autoreset=True)
+                                  seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4,
+                                  numfuncs=len(funcs), functype=FLAGS.function,
+                                  featuretype='ngrams', all_labels=False, autoreset=True,
+                                  filename='train')
 
         vocabsize = ((len(FeatureExtractor.ngrammap) + 1) if featuretype == 'ngrams' else
                      (len(FeatureExtractor.aminoacidmap) + 1))
 
-        model = KerasDeepGO(funcs, FLAGS.function, GODAG, train_iter.expectedshape, vocabsize, pretrained_embedding=pretrained).build()
+        model = KerasDeepGO(funcs, FLAGS.function, GODAG, train_iter.expectedshape, vocabsize, embedding_size=256, pretrained_embedding=pretrained).build()
         log.info('built encoder')
         log.info('built decoder')
         keras.backend.set_session(sess)
@@ -192,7 +197,7 @@ def main(argv):
     log.info('initializing test data')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
                                  seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4, numfuncs=len(funcs),
-                                 functype=FLAGS.function, featuretype='ngrams', all_labels=True)
+                                 functype=FLAGS.function, featuretype='ngrams', filename='test', all_labels=True)
 
     prec, recall, f1 = predict_evaluate(test_dataiter, model_jsonpath, model_path)
     log.info('testing error, prec-{}, recall-{}, f1-{}'.format(np.round(prec, 3), np.round(recall, 3), np.round(f1, 3)))

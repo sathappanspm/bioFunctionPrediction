@@ -52,4 +52,6 @@ BATCHSIZE=16
 
 python ${SCRIPT_ROOT}/deepGO.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 18815 / $BATCHSIZE )) --testsize $(( 5846 / $BATCHSIZE )) --validationsize $(( 4704 / $BATCHSIZE )) --inputfile ${DATA} --batchsize $BATCHSIZE --featuretype ngrams --maxseqlen 2002 --function ${FUNCTION}
 
+#python ${SCRIPT_ROOT}/deepGO.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 18815 / $BATCHSIZE )) --testsize $(( 5846 / $BATCHSIZE )) --validationsize $(( 4704 / $BATCHSIZE )) --inputfile ${DATA} --batchsize $BATCHSIZE --featuretype ngrams --maxseqlen 2002 --function ${FUNCTION} --predict ./model_3mers_mf_2018-08-05/savedmodels_1533505774/
+
 source deactivate

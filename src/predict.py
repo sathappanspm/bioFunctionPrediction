@@ -81,7 +81,8 @@ def create_args():
 
 def predict_evaluate(dataiter, thres, placeholders, modelpath):
     avgPrec, avgRecall, avgF1 = 0.0, 0.0, 0.0
-    with tf.Session() as sess:
+    new_graph = tf.Graph()
+    with tf.Session(graph=new_graph) as sess:
         saver = tf.train.import_meta_graph(glob(os.path.join(modelpath, 'model*meta'))[0])
         saver.restore(sess, tf.train.latest_checkpoint(modelpath))
         log.info('restored model')

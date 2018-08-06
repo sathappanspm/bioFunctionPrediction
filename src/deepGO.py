@@ -91,6 +91,11 @@ def create_args():
         '',
         'location of pretrained embedding'
     )
+    tf.app.flags.DEFINE_string(
+        'predict',
+        '',
+        'run prediction'
+    )
     return
 
 
@@ -138,6 +143,23 @@ def main(argv):
         pretrained, ngrammap = utils.load_pretrained_embedding(FLAGS.pretrained)
         FeatureExtractor.ngrammap = ngrammap
 
+    if FLAGS.predict:
+        log.info('running prediction')
+        test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize, seqlen=FLAGS.maxseqlen,
+                                     dataloader=data, functype=FLAGS.function, featuretype='ngrams',
+                                     filename='test', filterByEvidenceCodes=True)
+
+        placeholders = ['x_in:0', 'y_out:0', 'thres:0']
+        modelsavename = FLAGS.predict
+        bestthres = 0.2
+        prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], placeholders, modelsavename)
+        log.info('test results')
+        log.info('precision: {}, recall: {}, F1: {}'.format(round(prec, 2), round(recall, 2), round(f1, 2)))
+        data.close()
+
+        exit(0)
+
+
     with tf.Session() as sess:
         valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize, seqlen=FLAGS.maxseqlen,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams',
@@ -170,8 +192,8 @@ def main(argv):
         bestthres = 0
         metagraphFlag = True
         log.info('starting epochs')
-        tf.train.export_meta_graph(filename=os.path.join(FLAGS.outputdir, modelsavename,
-                                                        'model_{}.meta'.format(FLAGS.function)))
+        # tf.train.export_meta_graph(filename=os.path.join(FLAGS.outputdir, modelsavename,
+        #                                                'model_{}.meta'.format(FLAGS.function)))
         for epoch in range(FLAGS.num_epochs):
             log.info('************EPOCH-{} *******'.format(epoch))
             for x, y in train_iter:
@@ -199,7 +221,12 @@ def main(argv):
                         wait = 0
                         chkpt.save(sess, os.path.join(FLAGS.outputdir, modelsavename,
                                                         'model_{}_{}'.format(FLAGS.function, step)),
-                                    global_step=step, write_meta_graph=metagraphFlag)
+                                    global_step=step)
+                        if metagraphFlag:
+                            log.info('saving meta graph')
+                            chkpt.export_meta_graph(filename=os.path.join(FLAGS.outputdir, modelsavename,
+                                                        'model_{}.meta'.format(FLAGS.function)))
+
                         metagraphFlag = False
                     else:
                         wait += 1
