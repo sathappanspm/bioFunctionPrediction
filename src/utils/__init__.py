@@ -14,7 +14,7 @@ import tensorflow as tf
 from collections import deque
 import logging
 import numpy as np
-
+import ipdb as pdb
 
 def calc_performance_metrics(labels, predictions, threshold):
     labels = tf.cast(labels, tf.bool)
@@ -38,8 +38,8 @@ def numpy_calc_performance_metrics(labels, predictions, threshold):
     tp = np.sum(labels & predictions, axis=1)
     fp = np.sum(~labels & predictions, axis=1)
     fn = np.sum(labels & ~(predictions), axis=1)
-    precision = tp / (tp + fp + (1e-7))
-    recall = tp / (tp + fn + (1e-7))
+    precision = (tp / (tp + fp + (1e-7))).mean()
+    recall = (tp / (tp + fn + (1e-7))).mean()
     f1 = 2 * (precision * recall) / (precision + recall +(1e-7))
     return (
         np.mean(precision),
