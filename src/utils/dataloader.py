@@ -146,7 +146,7 @@ class GODAG(object):
     GOIDS = None
 
     @staticmethod
-    def initialize_idmap(idlist, root):
+    def initialize_idmap(idlist, root, idmapping=None):
         allnodes = set(GODAG.isagraph.nodes())
         if root:
             root = FUNC_DICT[root]
@@ -180,6 +180,10 @@ class GODAG(object):
         GODAG.GOIDS += list(goset)
         for id in goset:
             GODAG.idmap[GODAG.get(id)] = len(GODAG.idmap)
+
+        if idmapping is not None:
+            GODAG.idmap = idmapping
+            GODAG.GOIDS = [key[0] for key in sorted(GODAG.idmap.items(), key=lambda x: x[1])]
 
         log.info('GO data loaded. Total nodes -{}'.format(len(GODAG.idmap)))
         global GOFUNCMAT
@@ -288,13 +292,17 @@ class GODAG(object):
             if np.all((go_adj > 0).sum(axis=1) == (adj_prev > 0).sum(axis=1)):
                 Flag = False
 
-            log.info('calculating power of adj matrix')
+            #log.info('calculating power of adj matrix')
             adj_prev = go_adj
 
         return (go_adj > 0).todense()
         # return np.any(GODAG.vfunc(np.array(GODAG.GOIDS)[:, np.newaxis], funclabels), axis=0)
 
+    def dump(outputdir):
+        with open(os.path.join(outputdir, 'GO_IDMAPPING.json'), "w") as outf:
+            outf.write(json.dumps(GODAG.idmap))
 
+        return
 
 # def get_fullhierarchy(node, godag=None):
 #     mat = np.zeros(len(godag.GOIDS), dtype=np.bool_)
@@ -337,24 +345,30 @@ class FeatureExtractor():
     @staticmethod
     def dump(datadir):
         with open(os.path.join(DATADIR, 'aminoAcidMap.json'), 'w') as outf:
-            json.dump(outf, FeatureExtractor.aminoacidmap)
+            aacids = [ac[0] for ac in sorted(FeatureExtractor.aminoacidmap.items(), key=lambda x: x[1])]
+            json.dump(aacids, outf)
 
         with open(os.path.join(DATADIR, 'ngramMap.json'), 'w') as outf:
-            json.dump(outf, FeatureExtractor.ngrammap)
+            ngrams = [ac[0] for ac in sorted(FeatureExtractor.ngrammap.items(), key=lambda x: x[1])]
+            json.dump(ngrams, outf)
 
     @staticmethod
     def load(datadir):
-        with open(os.path.join(DATADIR, 'aminoacids.txt'), 'r') as inpf:
+        with open(os.path.join(DATADIR, 'aminoAcidMap.json'), 'r') as inpf:
             FeatureExtractor.aminoacidmap = {key: (index + 1) for index, key in enumerate(json.load(inpf))}
             # zero is reserved for masking
-            FeatureExtractor.aminoacidmap['<unk>'] = len(FeatureExtractor.aminoacidmap)
+            if '<unk>' not in FeatureExtractor.aminoacidmap:
+                FeatureExtractor.aminoacidmap['<unk>'] = len(FeatureExtractor.aminoacidmap)
+
             log.info('loaded amino acid map of size-{}'.format(len(FeatureExtractor.aminoacidmap)))
 
-        with open(os.path.join(DATADIR, 'ngrams.txt'), 'r') as inpf:
+        with open(os.path.join(DATADIR, 'ngramMap.json'), 'r') as inpf:
             ngrams = json.load(inpf)
             FeatureExtractor.ngrammap = {key: (index + 1) for index, key in enumerate(ngrams)}
-            # zero is reserved for masking
-            FeatureExtractor.ngrammap['<unk>'] = len(FeatureExtractor.ngrammap)
+            if '<unk>' not in FeatureExtractor.ngrammap:
+                # zero is reserved for masking
+                FeatureExtractor.ngrammap['<unk>'] = len(FeatureExtractor.ngrammap)
+
             log.info('loaded ngram map of size-{}'.format(len(FeatureExtractor.ngrammap)))
 
 

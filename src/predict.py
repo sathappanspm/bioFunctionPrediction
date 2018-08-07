@@ -26,7 +26,11 @@ import json
 import logging
 import os
 from glob import glob
-
+try:
+    import ipdb as pdb
+except:
+    import pdb
+import numpy as np
 # logging.basicConfig(filename='{}.log'.format(__processor__),
                     # filemode='w', level=logging.DEBUG)
 
@@ -95,19 +99,73 @@ def predict_evaluate(dataiter, thres, placeholders, modelpath):
                    graph.get_tensor_by_name('f1:0')]
         log.info('starting prediction')
         step = 0
+        #pdb.set_trace()
         for x, y in dataiter:
             if x.shape[0] != y.shape[0]:
                 raise Exception('invalid, x-{}, y-{}'.format(str(x.shape), str(y.shape)))
 
             prec, recall, f1 = sess.run(metrics, feed_dict={tf_y: y, tf_x: x, tf_thres: thres})
+            #pdb.set_trace()
+            log.info('f1 for batch:{}'.format(f1))
             avgPrec += prec
             avgRecall += recall
             avgF1 += f1
             step += 1
 
         dataiter.close()
-        log.info('read {} test batches'.format(step))
+        log.info('read {} test batches of size-{}'.format(step, x.shape[0]))
+
+        log.info('f1:{}'.format(avgF1/step))
     return avgPrec / step, avgRecall / step, avgF1 / step
+
+
+def predict_validate(dataiter, thres, placeholders, modelpath):
+    step = 0
+    THRESHOLD_RANGE = np.arange(0.1, 0.5, 0.05)
+    avgPrec, avgRecall, avgF1 = (np.zeros_like(THRESHOLD_RANGE),
+                                 np.zeros_like(THRESHOLD_RANGE),
+                                 np.zeros_like(THRESHOLD_RANGE)
+                                 )
+    new_graph = tf.Graph()
+    if not isinstance(thres, list):
+        thres = [thres]
+
+    log.info('thres: {}'.format(thres))
+    with tf.Session(graph=new_graph) as sess:
+        saver = tf.train.import_meta_graph(glob(os.path.join(modelpath, 'model*meta'))[0])
+        saver.restore(sess, tf.train.latest_checkpoint(modelpath))
+        log.info('restored validation model')
+        graph = tf.get_default_graph()
+        # tf_x, tf_y, tf_thres = graph.get_tensor_by_name('x_input:0'), graph.get_tensor_by_name('y_out:0')
+        # tf_thres = graph.get_tensor_by_name('thres:0')
+        tf_x, tf_y, tf_thres = [graph.get_tensor_by_name(name) for name in placeholders]
+        metrics = [graph.get_tensor_by_name('precision:0'),
+                   graph.get_tensor_by_name('recall:0'),
+                   graph.get_tensor_by_name('f1:0')]
+        log.info('starting prediction')
+        step = 0
+        for x, y in dataiter:
+            prec, recall, f1 = [], [], []
+            for thres in THRESHOLD_RANGE:
+                p, r, f = sess.run(metrics, feed_dict={tf_y: y, tf_x: x, tf_thres: [thres]})
+                # p, r, f, summary = sess.run([decoder.precision, decoder.recall,
+                #                             decoder.f1score, decoder.summary],
+                #                             feed_dict={decoder.ys_: y, encoder.xs_: x,
+                #                                        decoder.threshold: [thres]})
+                #summary_writer.add_summary(summary, step)
+                prec.append(p)
+                recall.append(r)
+                f1.append(f)
+
+            avgPrec += prec
+            avgRecall += recall
+            avgF1 += f1
+            step += 1
+
+        log.info('finished evaluating {} validation steps'.format(step))
+        dataiter.reset()
+
+    return (avgPrec / step, avgRecall / step, avgF1 / step)
 
 
 def print_predictions(predictions, gofuncs):

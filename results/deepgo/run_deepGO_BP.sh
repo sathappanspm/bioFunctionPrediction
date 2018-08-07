@@ -11,7 +11,7 @@
 ##SBATCH -A fungcat
 
 ## Check sinfo before setting this
-#SBATCH --nodelist hu008
+#SBATCH --nodelist hu006
 
 #SBATCH -t 360:00
 #SBATCH --mem=30G
@@ -48,8 +48,9 @@ FUNCTION="bp"
 OUTDIR="${RESULTDIR}/model_3mers_${FUNCTION}_$( date -I)"
 mkdir -p $OUTDIR
 
-BATCHSIZE=16
+BATCHSIZE=128
 
-python ${SCRIPT_ROOT}/deepGO.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 27056 / $BATCHSIZE )) --testsize $(( 8444 / $BATCHSIZE )) --validationsize $(( 6765 / $BATCHSIZE )) --inputfile ${DATA} --batchsize $BATCHSIZE --featuretype ngrams --maxseqlen 2002 --function ${FUNCTION}
+#python ${SCRIPT_ROOT}/deepGO.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 27056 / $BATCHSIZE )) --testsize $(( 8444 / $BATCHSIZE )) --validationsize $(( 6765 / $BATCHSIZE )) --inputfile ${DATA} --batchsize $BATCHSIZE --featuretype ngrams --maxseqlen 2002 --function ${FUNCTION}
 
+python ${SCRIPT_ROOT}/deepGO.py --resources ${SCRIPT_ROOT}/../resources --outputdir $OUTDIR --trainsize $(( 18815 / $BATCHSIZE )) --testsize $(( 5846 / $BATCHSIZE )) --validationsize $(( 4704 / $BATCHSIZE )) --inputfile ${DATA} --batchsize $BATCHSIZE --featuretype ngrams --maxseqlen 2002 --function ${FUNCTION} --predict ${RESULTDIR}/model_3mers_bp_2018-08-07/savedmodels_1533678273/
 source deactivate
