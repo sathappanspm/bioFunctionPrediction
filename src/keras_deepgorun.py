@@ -31,6 +31,7 @@ import os
 from utils import numpy_calc_performance_metrics
 import numpy as np
 import sys
+import ipdb as pdb
 
 logging.basicConfig(level=logging.INFO)
 strhandler = logging.StreamHandler(sys.stdout)
@@ -46,6 +47,16 @@ def create_args():
         'resources',
         './resources',
         "path to resources")
+
+    tf.app.flags.DEFINE_string(
+        'predict',
+        "",
+        "path to model folder")
+
+    tf.app.flags.DEFINE_string(
+        'featuretype',
+        'onehot',
+        "feature type to use")
 
     tf.app.flags.DEFINE_string(
         'inputfile',
@@ -121,6 +132,7 @@ def predict_evaluate(test_dataiter, model_jsonpath, modelpath):
                 preds = model.predict_on_batch(x)
                 preds = np.concatenate([preds, np.zeros((preds.shape[0], y.shape[1] - preds.shape[1]))], axis=1)
                 p, r, f = numpy_calc_performance_metrics(y, preds, thres)
+                # pdb.set_trace()
                 prec.append(p)
                 recall.append(r)
                 f1.append(f)
@@ -141,19 +153,34 @@ def main(argv):
     FeatureExtractor.load(FLAGS.resources)
     log.info('Loaded amino acid and ngram mapping data')
     pretrained = None
-    featuretype = 'onehot'
+    featuretype = FLAGS.featuretype
     if FLAGS.pretrained != '':
         log.info('loading pretrained embedding')
         pretrained, ngrammap = load_pretrained_embedding(FLAGS.pretrained)
         FeatureExtractor.ngrammap = ngrammap
         featuretype = 'ngrams'
 
+    if FLAGS.predict:
+        data = DataLoader(filename=FLAGS.inputfile)
+        log.info('running prediction')
+        model_jsonpath = FLAGS.outputdir + '/model_{}.json'.format(FLAGS.function)
+        model_path = FLAGS.outputdir + '/model_seq_' + FLAGS.function + '.h5'
+        test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
+                                     seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4, numfuncs=len(funcs),
+                                     functype=FLAGS.function, featuretype='ngrams', filename='test', all_labels=True)
+
+        prec, recall, f1 = predict_evaluate(test_dataiter, model_jsonpath, model_path)
+        # pdb.set_trace()
+        log.info('precision: {}, recall: {}, F1: {}'.format(np.round(prec, 2), np.round(recall, 2), np.round(f1, 2)))
+        data.close()
+        exit(0)
+
     with tf.Session() as sess:
         data = DataLoader(filename=FLAGS.inputfile)
         log.info('initializing validation data')
-        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
+        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize, seqlen=FLAGS.maxseqlen,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams',numfuncs=len(funcs),
-                                      all_labels=False, filename='validation', filterByEvidenceCodes=True)
+                                      all_labels=False, filename='validation', filterByEvidenceCodes=True, autoreset=True)
 
         log.info('initializing train data')
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
@@ -164,20 +191,21 @@ def main(argv):
 
         vocabsize = ((len(FeatureExtractor.ngrammap) + 1) if featuretype == 'ngrams' else
                      (len(FeatureExtractor.aminoacidmap) + 1))
-
-        model = KerasDeepGO(funcs, FLAGS.function, GODAG, train_iter.expectedshape, vocabsize, embedding_size=256, pretrained_embedding=pretrained).build()
+        print("vocab size", vocabsize)
+        model = KerasDeepGO(funcs, FLAGS.function, GODAG, train_iter.expectedshape,
+                            ngramsize=vocabsize, embedding_size=256, pretrained_embedding=pretrained).build()
         log.info('built encoder')
         log.info('built decoder')
         keras.backend.set_session(sess)
         log.info('starting epochs')
 
-        model_path = FLAGS.outputdir + 'models/model_seq_' + FLAGS.function + '.h5'
+        model_path = FLAGS.outputdir + '/model_seq_' + FLAGS.function + '.h5'
         checkpointer = keras.callbacks.ModelCheckpoint(
             filepath=model_path,
             verbose=1, save_best_only=True, save_weights_only=True)
         earlystopper = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, verbose=1)
 
-        model_jsonpath = FLAGS.outputdir + 'models/model_{}.json'.format(FLAGS.function)
+        model_jsonpath = FLAGS.outputdir + '/model_{}.json'.format(FLAGS.function)
         f = open(model_jsonpath, 'w')
         f.write(model.to_json())
         f.close()

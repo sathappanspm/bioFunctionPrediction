@@ -25,7 +25,10 @@ import json
 import os
 import sys
 import pandas as pd
-import ipdb as pdb
+try:
+    import ipdb as pdb
+except:
+    import pdb
 
 random.seed(1)
 #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -541,7 +544,11 @@ class DataIterator(object):
         elif not self.stopiter:
             inputs, labels = self.__next__()
         else:
-            raise StopIteration
+            if self.autoreset:
+                self.reset()
+                inputs, labels = self.__next__()
+            else:
+                raise StopIteration
 
         return inputs, labels
 
