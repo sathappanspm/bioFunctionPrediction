@@ -167,7 +167,8 @@ def main(argv):
         model_path = FLAGS.outputdir + '/model_seq_' + FLAGS.function + '.h5'
         test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
                                      seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4, numfuncs=len(funcs),
-                                     functype=FLAGS.function, featuretype='ngrams', filename='test', all_labels=True)
+                                     functype=FLAGS.function, featuretype='ngrams', filename='test',
+                                     all_labels=True, filterByEvidenceCodes=True)
 
         prec, recall, f1 = predict_evaluate(test_dataiter, model_jsonpath, model_path)
         # pdb.set_trace()
@@ -187,7 +188,7 @@ def main(argv):
                                   seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4,
                                   numfuncs=len(funcs), functype=FLAGS.function,
                                   featuretype='ngrams', all_labels=False, autoreset=True,
-                                  filename='train')
+                                  filename='train', filterByEvidenceCodes=True)
 
         vocabsize = ((len(FeatureExtractor.ngrammap) + 1) if featuretype == 'ngrams' else
                      (len(FeatureExtractor.aminoacidmap) + 1))
@@ -225,7 +226,8 @@ def main(argv):
     log.info('initializing test data')
     test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
                                  seqlen=FLAGS.maxseqlen, dataloader=data, numfiles=4, numfuncs=len(funcs),
-                                 functype=FLAGS.function, featuretype='ngrams', filename='test', all_labels=True)
+                                 functype=FLAGS.function, featuretype='ngrams',
+                                 filename='test', all_labels=True, filterByEvidenceCodes=True)
 
     prec, recall, f1 = predict_evaluate(test_dataiter, model_jsonpath, model_path)
     log.info('testing error, prec-{}, recall-{}, f1-{}'.format(np.round(prec, 3), np.round(recall, 3), np.round(f1, 3)))
