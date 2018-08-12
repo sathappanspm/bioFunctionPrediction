@@ -18,7 +18,7 @@ sys.path.append('../')
 import ipdb
 from utils import variable_summaries
 
-log = logging.getLogger('RNNDecoder')
+log = logging.getLogger('root.RNNDecoder')
 
 
 class GORNNDecoder(object):
@@ -31,7 +31,7 @@ class GORNNDecoder(object):
 
     def __init__(self, inputlayer, labelembedding, num_negatives=10,
                  learning_rate=0.001,
-                 lstm_statesize=256, numfuncs=5):
+                 lstm_statesize=256, numfuncs=5, trainlabelemb=False):
         self.inputs = inputlayer
         self.learning_rate = learning_rate
         self.num_neg_samples = num_negatives
@@ -39,6 +39,7 @@ class GORNNDecoder(object):
         self.lstm_statesize = lstm_statesize
         self.labelembedding = labelembedding
         self.numfuncs = numfuncs
+        self.trainlabelemb = trainlabelemb
         # self.GO_MAT = GO_MAT
 
     def init_variables(self):
@@ -48,9 +49,11 @@ class GORNNDecoder(object):
                                   dtype=tf.int32, name='y_out')
 
         # this represents the label embedding, size (GO nodes x labelembeddingsize)
-        self.labelemb = tf.get_variable('labelemb', initializer=self.labelembedding, dtype=tf.float32,
-                                        trainable=False)
+        self.labelemb = tf.get_variable('inputlabelemb', initializer=self.labelembedding, dtype=tf.float32,
+                                        trainable=self.trainlabelemb)
 
+        mask = tf.concat([[0], tf.ones(self.labelembedding.shape[0])], axis=0)
+        self.labelemb = tf.concat([tf.zeros((1, self.labelembedding.shape[1])), self.labelemb], axis=0, name='labelemb_concat')
         # self.threshold = tf.placeholder(shape=(1,), dtype=tf.float32, name='thres')
 
         # the negative samples to be used, size (batchsize x number of negatives)
@@ -58,10 +61,16 @@ class GORNNDecoder(object):
         self.lstmcell = tf.contrib.rnn.BasicLSTMCell(self.lstm_statesize, activation=tf.nn.elu)
                                                      # name='lstmcell')
 
+        ## to handle different tensorflow versions
+        if hasattr(tf, 'initializers'):
+            initializer = tf.initializers.random_uniform
+        else:
+            initializer = tf.random_uniform_initializer()
+
         self.output_weights = tf.get_variable('rnn_outputW', shape=[self.lstm_statesize, self.label_dimensions])
         self.output_bias = tf.get_variable('rnnout_bias', shape=[self.label_dimensions])
         self.ytransform = tf.get_variable('ytransform', shape=[self.label_dimensions, self.label_dimensions],
-                                          initializer=tf.initializers.identity)
+                                          initializer=initializer)
 
     def build(self):
         self.init_variables()
@@ -84,24 +93,43 @@ class GORNNDecoder(object):
         rflat = tf.reshape(rnnout, shape=[-1, self.lstm_statesize])
 
         # batchsize*5 x labeldim
-        self.output = tf.nn.l2_normalize(tf.nn.softplus(tf.matmul(rflat,
-                                                                  self.output_weights)
-                                                        + self.output_bias,
-                                                        name='yhat'),
-                                         axis=1)
+        try:
+            self.output = tf.nn.l2_normalize(tf.nn.softplus(tf.matmul(rflat,
+                                                                      self.output_weights)
+                                                            + self.output_bias,
+                                                            name='yhat'),
+                                             axis=1)
+        except:
+            self.output = tf.nn.l2_normalize(tf.nn.softplus(tf.matmul(rflat,
+                                                                      self.output_weights)
+                                                            + self.output_bias,
+                                                            name='yhat'),
+                                             dim=1)
 
         log.info('final decoder out shape {}'.format(self.output.get_shape()))
         # ipdb.set_trace()
-        self.transformed_y = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.yemb, shape=[-1, self.label_dimensions]),
-                                                     self.ytransform),
-                                           axis=1)
+        try:
+            self.transformed_y = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.yemb, shape=[-1, self.label_dimensions]),
+                                                         self.ytransform),
+                                                    axis=1)
+        except:
+            self.transformed_y = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.yemb, shape=[-1, self.label_dimensions]),
+                                                         self.ytransform),
+                                                    dim=1)
+
 
         variable_summaries(self.transformed_y)
         # batch size*10 x labeldim
-        self.transformed_negsamples = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.negemb,
-                                                                         shape=[-1, self.label_dimensions]),
-                                                              self.ytransform),
-                                                    axis=1)
+        try:
+            self.transformed_negsamples = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.negemb,
+                                                                       shape=[-1, self.label_dimensions]),
+                                                                       self.ytransform),
+                                                             axis=1)
+        except:
+            self.transformed_negsamples = tf.nn.l2_normalize(tf.matmul(tf.reshape(self.negemb,
+                                                                       shape=[-1, self.label_dimensions]),
+                                                                       self.ytransform),
+                                                             dim=1)
 
         variable_summaries(self.ytransform)
         # batchsize *5 x 1
@@ -128,13 +156,16 @@ class GORNNDecoder(object):
 
     def make_prediction(self):
         # make unit-vectors, size (GO nodes x embeddingsize)
-        norm_labelemb = tf.nn.l2_normalize(tf.matmul(self.labelemb, self.ytransform), axis=1, name='labelnorm')
+        try:
+            norm_labelemb = tf.nn.l2_normalize(tf.matmul(self.labelemb, self.ytransform), axis=1, name='labelnorm')
+        except:
+            norm_labelemb = tf.nn.l2_normalize(tf.matmul(self.labelemb, self.ytransform), dim=1, name='labelnorm')
 
         # get cosine similarity, size (batchsize*5 x GO nodes)
         distmat = tf.matmul(self.output, tf.transpose(norm_labelemb), name='pred_dist')
 
         # boolean matrix of size batchsize x GOlen
-        pred_labels = tf.reshape(tf.argmin(distmat, axis=1), shape=[-1, self.numfuncs])
+        pred_labels = tf.reshape(tf.argmin(distmat, axis=1), shape=[-1, self.numfuncs], name='predictions')
 
         #truelabels
         # true_labels = GODAG.vfunc(tf.reshape(self.ys_, ))

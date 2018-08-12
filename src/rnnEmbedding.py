@@ -21,7 +21,7 @@ import tensorflow as tf
 import utils
 from utils.dataloader import GODAG, FeatureExtractor, load_labelembedding
 from utils.dataloader import DataIterator, DataLoader
-from utils.dataloader import vectorized_getlabelmat
+#from utils.dataloader import vectorized_getlabelmat
 from utils import numpy_calc_performance_metrics
 from models.encoders import CNNEncoder
 from models.rnndecoder import GORNNDecoder
@@ -30,20 +30,27 @@ import logging
 import os
 import numpy as np
 from predict import predict_evaluate
-import ipdb
+import ipdb as pdb
+from glob import glob
 from tensorflow.python import debug as tf_debug
 
 # handler = logging.FileHandler('{}.log'.format(__processor__))
-log = logging.getLogger('main')
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger('root')
 # log.addHandler(handler)
 FLAGS = tf.app.flags.FLAGS
 
 
 def create_args():
     tf.app.flags.DEFINE_string(
-        'data',
-        './data',
+        'resources',
+        './resources',
         "path to data")
+
+    tf.app.flags.DEFINE_string(
+        'inputfile',
+        '',
+        "path to inputfile")
 
     tf.app.flags.DEFINE_string(
         'outputdir',
@@ -95,8 +102,8 @@ def create_args():
 
 
 def evaluate(predictions, labels):
-    labelmat = np.any(vectorized_getlabelmat(labels), axis=1)
-    predmat = np.any(vectorized_getlabelmat(predictions), axis=1)
+    labelmat = GODAG.get_fullmat(labels)  # np.any(vectorized_getlabelmat(labels), axis=1)
+    predmat = GODAG.get_fullmat(predictions) # np.any(vectorized_getlabelmat(predictions), axis=1)
     return numpy_calc_performance_metrics(labelmat, predmat, threshold=0.2)
 
 
@@ -105,8 +112,9 @@ def validate(dataiter, sess, encoder, decoder, summary_writer):
     avgPrec, avgRecall, avgF1 = 0.0, 0.0, 0.0
     for x, y in dataiter:
         predictions, summary = sess.run([decoder.predictions, decoder.summary],
-                                     feed_dict={decoder.ys_: y, encoder.xs_: x,
-                                                decoder.negsamples: np.zeros((y.shape[1], 10))})
+                                        feed_dict={decoder.ys_: y[:, :FLAGS.maxnumfuncs],
+                                                   encoder.xs_: x,
+                                                   decoder.negsamples: np.zeros((y.shape[0], 10))})
         summary_writer.add_summary(summary, step)
         p, r, f1 = evaluate(predictions, y)
 
@@ -119,39 +127,73 @@ def validate(dataiter, sess, encoder, decoder, summary_writer):
     return (avgPrec / step, avgRecall / step, avgF1 / step)
 
 
+def test(dataiter, placeholders, modelpath):
+    step = 0
+    avgPrec, avgRecall, avgF1 = 0.0, 0.0, 0.0
+    new_graph = tf.Graph()
+    with tf.Session(graph=new_graph) as sess:
+        saver = tf.train.import_meta_graph(glob(os.path.join(modelpath, 'model*meta'))[0])
+        saver.restore(sess, tf.train.latest_checkpoint(modelpath))
+        log.info('restored model')
+        graph = tf.get_default_graph()
+        # tf_x, tf_y, tf_thres = graph.get_tensor_by_name('x_input:0'), graph.get_tensor_by_name('y_out:0')
+        # tf_thres = graph.get_tensor_by_name('thres:0')
+        tf_x, tf_y, tf_neg = [graph.get_tensor_by_name(name) for name in placeholders]
+        metrics = [graph.get_tensor_by_name('predictions:0')]
+        for x, y in dataiter:
+            negsamples = np.zeros((x.shape[0], 10))
+            predictions = sess.run(metrics,
+                                    feed_dict={tf_y: y[:, :FLAGS.maxnumfuncs],
+                                    tf_x: x,
+                                    tf_neg: np.zeros((y.shape[0], 10))})
+            p, r, f1 = evaluate(predictions, y)
+            avgPrec += p
+            avgRecall += r
+            avgF1 += f1
+            step += 1
+    return (avgPrec / step, avgRecall / step, avgF1 / step)
+
+
 def get_negatives(funcs, numNegatives):
-    funcmat = np.any(vectorized_getlabelmat(funcs), axis=1)
     negatives = np.zeros((funcs.shape[0], numNegatives))
-    for row in range(funcmat.shape[0]):
-        negatives[row, :] = np.random.choice(np.nonzero(~funcmat[row, :])[0], size=numNegatives)
+    funcmat = GODAG.get_fullmat(funcs)
+    for row in range(funcs.shape[0]):
+        try:
+            # funcmat = GODAG.get_fullmat(funcs[row, :]) # np.any(vectorized_getlabelmat(funcs), axis=1)
+            negatives[row, :] = np.random.choice(np.nonzero(~funcmat[row, :])[1], size=numNegatives)
+        except:
+            pdb.set_trace()
 
     return negatives
 
 
 def main(argv):
-    goids = GODAG.initialize_idmap(None, None)
+    _ = GODAG.initialize_idmap(None, None)
     # GO_MAT = GODAG.get_fullmat(goids)
     # log.info('GO Matrix shape - {}'.format(GO_MAT.shape))
     # GO_MAT = np.vstack([np.zeros(GO_MAT.shape[1]), GO_MAT])
-    labelembedding = load_labelembedding(os.path.join(FLAGS.data, 'goEmbeddings.txt'), goids)
-    assert(labelembedding.shape[0] == (len(goids) + 1)) , 'label embeddings and known go ids differ'
+
+    labelembedding, labelIDS = load_labelembedding(os.path.join(FLAGS.resources, 'goEmbeddings.txt'))
+    goids = GODAG.initialize_idmap(labelIDS, None)
+    # pdb.set_trace()
+    assert(labelembedding.shape[0] == len(goids)) , 'label embeddings and known go ids differ'
     labelembeddingsize = labelembedding.shape[1]
-    FeatureExtractor.load(FLAGS.data)
+    FeatureExtractor.load(FLAGS.resources)
     log.info('Loaded amino acid and ngram mapping data')
 
-    data = DataLoader()
+    data = DataLoader(filename=FLAGS.inputfile)
     modelsavename = 'savedmodels_{}'.format(int(time.time()))
     with tf.Session() as sess:
         # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
-        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize,
+        valid_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.validationsize, seqlen=FLAGS.maxseqlen,
                                       dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                      onlyLeafNodes=True, limit=FLAGS.maxnumfuncs)
-
+                                      onlyLeafNodes=True, limit=FLAGS.maxnumfuncs, filterByEvidenceCodes=True,
+                                      filename='validation')
 
         train_iter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.trainsize,
                                   seqlen=FLAGS.maxseqlen, dataloader=data,
-                                  numfiles=np.floor((FLAGS.trainsize * FLAGS.batchsize) / 250000),
-                                  functype=FLAGS.function, featuretype='ngrams', onlyLeafNodes=True, limit=FLAGS.maxnumfuncs)
+                                  functype=FLAGS.function, featuretype='ngrams', onlyLeafNodes=True, limit=FLAGS.maxnumfuncs,
+                                  filename='train', filterByEvidenceCodes=True)
 
         encoder = CNNEncoder(vocab_size=len(FeatureExtractor.ngrammap) + 1, inputsize=train_iter.expectedshape).build()
         log.info('built encoder')
@@ -165,10 +207,9 @@ def main(argv):
 
         test_writer = tf.summary.FileWriter(FLAGS.outputdir + '/test')
         step = 0
-        maxwait = 1
+        maxwait = 5
         wait = 0
         bestf1 = 0
-        bestthres = 0
         metagraphFlag = True
         log.info('starting epochs')
         log.info('params - trainsize-{}, validsie-{}, rootfunc-{}, batchsize-{}'.format(FLAGS.trainsize, FLAGS.validationsize,
@@ -180,8 +221,9 @@ def main(argv):
 
                 negatives = get_negatives(y, 10)
                 _, loss, summary = sess.run([decoder.train, decoder.loss, decoder.summary],
-                                            feed_dict={decoder.ys_: y, encoder.xs_: x,
-                                                decoder.negsamples: negatives})
+                                            feed_dict={decoder.ys_: y[:, :FLAGS.maxnumfuncs], encoder.xs_: x,
+                                                       decoder.negsamples: negatives})
+
                 train_writer.add_summary(summary, step)
                 log.info('step-{}, loss-{}'.format(step, round(loss, 2)))
                 step += 1
@@ -208,10 +250,13 @@ def main(argv):
             train_iter.reset()
 
     log.info('testing model')
-    test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize,
+    test_dataiter = DataIterator(batchsize=FLAGS.batchsize, size=FLAGS.testsize, seqlen=FLAGS.maxseqlen,
                                  dataloader=data, functype=FLAGS.function, featuretype='ngrams',
-                                 onlyLeafNodes=True, limit=FLAGS.maxnumfuncs)
-    prec, recall, f1 = predict_evaluate(test_dataiter, [bestthres], os.path.join(FLAGS.outputdir, modelsavename))
+                                 onlyLeafNodes=True, limit=FLAGS.maxnumfuncs, filename='test',
+                                 filterByEvidenceCodes=True)
+
+    placeholders = ['x_in:0', 'y_out:0', 'negsamples:0']
+    prec, recall, f1 = test(test_dataiter, placeholders, os.path.join(FLAGS.outputdir, modelsavename))
     log.info('test results')
     log.info('precision: {}, recall: {}, F1: {}'.format(round(prec, 2), round(recall, 2), round(f1, 2)))
     data.close()
