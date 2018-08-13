@@ -41,8 +41,9 @@ BIOLOGICAL_PROCESS = 'GO:0008150'
 MOLECULAR_FUNCTION = 'GO:0003674'
 CELLULAR_COMPONENT = 'GO:0005575'
 FUNC_DICT = {'cc': CELLULAR_COMPONENT,
-                'mf': MOLECULAR_FUNCTION,
-                'bp': BIOLOGICAL_PROCESS}
+             'mf': MOLECULAR_FUNCTION,
+             'bp': BIOLOGICAL_PROCESS
+             }
 
 
 if nx.__version__ == '2.0':
@@ -95,7 +96,7 @@ def smart_open(fname, mode='rb'):
     return fobj
 
 
-def load_labelembedding(path, goids):
+def load_labelembedding(path):
     from gensim.models import KeyedVectors
     model = KeyedVectors.load_word2vec_format(path)
     modelroot = model.wv if hasattr(model, 'wv') else model
@@ -106,10 +107,18 @@ def load_labelembedding(path, goids):
 
     ## reorder the embeddings to follow the same order as goids list
     # neworder = [model.wv.vocab[goid].index for goid in goids]
-    neworder = [modelroot.vocab[goid].index for goid in goids]
+    neworder = []
+    removeset = set()
+    for goid in GODAG.GOIDS:
+        try:
+            neworder.append(modelroot.vocab[goid].index)
+        except:
+            removeset.add(goid)
+
+    #neworder = [modelroot.vocab[goid].index for goid in goids]
     # reorderedmat = model.wv.syn0[neworder, :]
     reorderedmat = modelroot.syn0[neworder, :]
-    return reorderedmat #(np.vstack([np.zeros(reorderedmat.shape[1]), reorderedmat])).astype(np.float32)
+    return reorderedmat, [i for i in GODAG.GOIDS if i not in removeset] #(np.vstack([np.zeros(reorderedmat.shape[1]), reorderedmat])).astype(np.float32)
 
 
 def load_pretrained_embedding(path):
@@ -151,6 +160,7 @@ class GODAG(object):
     @staticmethod
     def initialize_idmap(idlist, root, idmapping=None):
         allnodes = set(GODAG.isagraph.nodes())
+        goset = set()
         if root:
             root = FUNC_DICT[root]
             allnodes = set(nx.descendants(GODAG.isagraph, root))
@@ -160,7 +170,8 @@ class GODAG(object):
             # and remove the obsolete go terms from this list
             GODAG.GOIDS = list(set([GODAG.get(id) for id in idlist]).difference(GODAG.obsolete.keys()))
             updatedIdlist = (GODAG.GOIDS).copy()
-            GODAG.idmap = {id: index for index, id in enumerate(GODAG.GOIDS)}
+            GODAG.idmap = {id: index + 1 for index, id in enumerate(GODAG.GOIDS)}
+            GODAG.idmap['STOPGO'] = 0
             goset = allnodes - GODAG.idmap.keys()
         else:
             with open(os.path.join(DATADIR, 'funcCounts.json')) as inpf:
@@ -173,13 +184,16 @@ class GODAG(object):
                         funcweights[altid] = funcweights.get(altid, 0) + val
 
             tmp = sorted(funcweights.items(), reverse=True, key=lambda x: x[1])
-            # index 0 is reserved for STOPGO
-            GODAG.idmap = {GODAG.get(item[0]): index for index, item in enumerate(tmp)}
-            goset = allnodes - funcweights.keys()
-            GODAG.GOIDS = [item[0] for item in tmp]
+            # index 0 is reserved for STOPGO, it is needed in case of Label Embedding
+            GODAG.idmap = {GODAG.get(item[0]): index + 1 for index, item in enumerate(tmp)}
+            GODAG.idmap['STOPGO'] = 0
+            remainingnodes = list(allnodes - funcweights.keys())
+            for i in remainingnodes:
+                GODAG.idmap[GODAG.get(i)] = len(GODAG.idmap)
+
+            GODAG.GOIDS = [item[0] for item in tmp] + remainingnodes
             updatedIdlist = (GODAG.GOIDS).copy()
 
-        #pdb.set_trace()
         GODAG.GOIDS += list(goset)
         for id in goset:
             GODAG.idmap[GODAG.get(id)] = len(GODAG.idmap)
@@ -242,9 +256,8 @@ class GODAG(object):
 
     @staticmethod
     def get_id(node):
-        if node == 'STOPGO':
-            return -1
-
+        #if node == 'STOPGO':
+        #    return -1
         try:
             return GODAG.idmap[GODAG.get(node)]
         except KeyError as e:
@@ -258,7 +271,11 @@ class GODAG(object):
         if id == -1:
             return 'STOPGO'
 
-        return GODAG.GOIDS[id]
+        term = GODAG.GOIDS[id -1]
+        if id != GODAG.get_id(term):
+            raise Exception('WRONG!!!!!!')
+
+        return GODAG.GOIDS[id - 1]
 
     @staticmethod
     def get(node):
@@ -280,8 +297,17 @@ class GODAG(object):
         #     funclabels = [GODAG.id2node(i) for i in funcids]
         # else:
         #     funclabels = funcids
-        ids = [GODAG.get_id(node) for node in set(funcids)]
-        return np.any(GOFUNCMAT[[i for i in ids if i!=-1]], axis=0)
+        if isinstance(funcids[0], list):
+            raise Exception('not implemented')
+
+        if hasattr(funcids, 'shape'):
+            # funcs = funcids.astype(np.bool_)
+            # mat = np.any(GOFUNCMAT[funcs], axis=0)
+            mat = np.any(GOFUNCMAT[funcids], axis=1)
+        else:
+            ids = [GODAG.get_id(node) for node in set(funcids)]
+            mat = np.any(GOFUNCMAT[[i for i in ids if i!=-1]], axis=0)
+        return mat
         # return np.any(GODAG.vfunc(np.array(GODAG.GOIDS)[:, np.newaxis], funclabels), axis=0)
 
     @staticmethod
@@ -298,7 +324,10 @@ class GODAG(object):
             #log.info('calculating power of adj matrix')
             adj_prev = go_adj
 
-        return (go_adj > 0).todense()
+        gomat = (go_adj > 0).todense()
+        gomat = np.vstack((np.zeros((1, gomat.shape[1])), gomat))
+        gomat = np.hstack((np.zeros((gomat.shape[0], 1)), gomat))
+        return gomat
         # return np.any(GODAG.vfunc(np.array(GODAG.GOIDS)[:, np.newaxis], funclabels), axis=0)
 
     def dump(outputdir):
@@ -392,7 +421,6 @@ class DataLoader(object):
 
         self.openfiles = dict()
         #self.gofuncmat = GODAG.build_connectionMat(GODAG.GOIDS)
-        #ipdb.set_trace()
 
     def getmember(self, member):
         """
@@ -500,12 +528,21 @@ class DataIterator(object):
                           and ((not self.filterByEC) or (func['ec'] in EVIDENCE_CODES)))]
 
                 if self.onlyLeafNodes is True:
+                    if funcs == []:
+                        log.info('no funcs available')
+                        continue
+
                     funcs = GODAG.get_leafnodes(funcs)
                     #if self.limit is not None:
-                        # only predict limit number of functions
-                        #funcs = funcs[:self.limit]
+                    #    # only predict limit number of functions
+                    #    funcs = funcs[:self.limit]
+                    #print(funcs)
                     ids = [GODAG.get_id(fn) for fn in funcs]
-                    labels.append([i for i  in ids  if i != -1])
+                    #indices = [i for i  in ids  if i != -1]
+                    #mat = np.zeros(len(GODAG.GOIDS) + 1)
+                    #mat[indices] = 1
+                    #labels.append(mat)
+                    labels.append([i for i  in ids if i != -1])
                 else:
                     # labels.append(GODAG.to_npy(funcs))
                     #pdb.set_trace()
@@ -574,8 +611,8 @@ class DataIterator(object):
                                                 self.expectedshape - inputs.shape[1]))], axis=1)
         # log.info('batch shape is {}-{}'.format(inputs.shape, labels.shape))
         # log.info('max id is {}'.format(np.max(inputs)))
-        if labels.shape[1] < 10:
-            pdb.set_trace()
+        # if labels.shape[1] < 10:
+        #    pdb.set_trace()
 
         if self.all_labels is False:
             labels = labels[:, :self.numfuncs]
