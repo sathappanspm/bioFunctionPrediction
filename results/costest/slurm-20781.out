@@ -1,0 +1,58 @@
+]0;IPython: bioFunctionPrediction/srcINFO:root.DataLoader:GO data loaded. Total nodes -44939
+/home/sathap1/.conda/envs/pytorch/lib/python3.6/site-packages/scipy/sparse/compressed.py:774: SparseEfficiencyWarning: Changing the sparsity structure of a csr_matrix is expensive. lil_matrix is more efficient.
+  SparseEfficiencyWarning)
+INFO:root.DataLoader:built connection matrix -(44939, 44939)
+INFO:summa.preprocessing.cleaner:'pattern' package not found; tag filters are not available for English
+INFO:gensim.models.keyedvectors:loading projection weights from /home/sathap1/workspace/bioFunctionPrediction/src//../resources/goEmbeddings.txt
+INFO:gensim.models.keyedvectors:loaded (44972, 128) matrix from /home/sathap1/workspace/bioFunctionPrediction/src//../resources/goEmbeddings.txt
+INFO:root.DataLoader:loading go funcs of len-44914
+INFO:root.DataLoader:GO data loaded. Total nodes -44939
+/home/sathap1/.conda/envs/pytorch/lib/python3.6/site-packages/scipy/sparse/compressed.py:774: SparseEfficiencyWarning: Changing the sparsity structure of a csr_matrix is expensive. lil_matrix is more efficient.
+  SparseEfficiencyWarning)
+INFO:root.DataLoader:built connection matrix -(44939, 44939)
+INFO:root.DataLoader:loaded amino acid map of size-25
+INFO:root.DataLoader:loaded ngram map of size-13825
+INFO:root:Loaded amino acid and ngram mapping data
+2018-08-20 19:18:33.661650: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 0 with properties: 
+name: Tesla P100-SXM2-16GB
+major: 6 minor: 0 memoryClockRate (GHz) 1.4805
+pciBusID 0002:01:00.0
+Total memory: 15.89GiB
+Free memory: 15.60GiB
+2018-08-20 19:18:33.661700: I tensorflow/core/common_runtime/gpu/gpu_device.cc:961] DMA: 0 
+2018-08-20 19:18:33.661709: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 0:   Y 
+2018-08-20 19:18:33.661732: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:0) -> (device: 0, name: Tesla P100-SXM2-16GB, pci bus id: 0002:01:00.0)
+INFO:root.DataLoader:only leaf nodes will be used as labels - True
+INFO:root.DataLoader:using ngrams of size 3 as feature representation
+INFO:root.DataLoader:only leaf nodes will be used as labels - True
+INFO:root.DataLoader:using ngrams of size 3 as feature representation
+INFO:encoder:shape_cnnout-(?, 57, 32)
+INFO:encoder:shape_maxpool-(?, 1824)
+INFO:encoder:shape_encoderout-(?, 1024)
+INFO:root:built encoder
+INFO:root.RNNDecoder:input label embedding-(?, 2, 128)
+INFO:root.RNNDecoder:final decoder out shape (?, 128)
+INFO:root:built decoder
+INFO:root:starting epochs
+INFO:root:params - trainsize-293, validsie-73, rootfunc-, batchsize-64
+INFO:root.DataLoader:opening file - /home/sathap1/workspace/bioFunctionPrediction/data/data_BP/train_seqs_BP.fasta.gz
+INFO:root.DataLoader:read file - /home/sathap1/workspace/bioFunctionPrediction/data/data_BP/train_seqs_BP.fasta.gz
+Traceback (most recent call last):
+  File "./cosEmbedding.py", line 307, in <module>
+    tf.app.run(main)
+  File "/home/sathap1/.conda/envs/pytorch/lib/python3.6/site-packages/tensorflow/python/platform/app.py", line 48, in run
+    _sys.exit(main(_sys.argv[:1] + flags_passthrough))
+  File "./cosEmbedding.py", line 265, in main
+    decoder.negsamples: negatives})
+AttributeError: 'GORNNDecoder' object has no attribute 'negsamples'
+
+If you suspect this is an IPython bug, please report it at:
+    https://github.com/ipython/ipython/issues
+or send an email to the mailing list at ipython-dev@python.org
+
+You can print a more detailed traceback right now with "%tb", or use "%debug"
+to interactively debug it.
+
+Extra-detailed tracebacks for bug-reporting purposes can be enabled via:
+    %config Application.verbose_crash=True
+

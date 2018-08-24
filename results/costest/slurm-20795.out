@@ -1,0 +1,1901 @@
+]0;IPython: bioFunctionPrediction/srcINFO:root.DataLoader:GO data loaded. Total nodes -44939
+/home/sathap1/.conda/envs/pytorch/lib/python3.6/site-packages/scipy/sparse/compressed.py:774: SparseEfficiencyWarning: Changing the sparsity structure of a csr_matrix is expensive. lil_matrix is more efficient.
+  SparseEfficiencyWarning)
+INFO:root.DataLoader:built connection matrix -(44939, 44939)
+INFO:summa.preprocessing.cleaner:'pattern' package not found; tag filters are not available for English
+INFO:gensim.models.keyedvectors:loading projection weights from /home/sathap1/workspace/bioFunctionPrediction/src//../resources/goEmbeddings.txt
+INFO:gensim.models.keyedvectors:loaded (44972, 128) matrix from /home/sathap1/workspace/bioFunctionPrediction/src//../resources/goEmbeddings.txt
+INFO:root.DataLoader:loading go funcs of len-44914
+INFO:root.DataLoader:GO data loaded. Total nodes -44939
+/home/sathap1/.conda/envs/pytorch/lib/python3.6/site-packages/scipy/sparse/compressed.py:774: SparseEfficiencyWarning: Changing the sparsity structure of a csr_matrix is expensive. lil_matrix is more efficient.
+  SparseEfficiencyWarning)
+INFO:root.DataLoader:built connection matrix -(44939, 44939)
+INFO:root.DataLoader:loaded amino acid map of size-25
+INFO:root.DataLoader:loaded ngram map of size-13825
+INFO:root:Loaded amino acid and ngram mapping data
+2018-08-21 11:36:27.027232: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 0 with properties: 
+name: Tesla P100-SXM2-16GB
+major: 6 minor: 0 memoryClockRate (GHz) 1.4805
+pciBusID 0002:01:00.0
+Total memory: 15.89GiB
+Free memory: 15.60GiB
+2018-08-21 11:36:27.027282: I tensorflow/core/common_runtime/gpu/gpu_device.cc:961] DMA: 0 
+2018-08-21 11:36:27.027291: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 0:   Y 
+2018-08-21 11:36:27.027314: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:0) -> (device: 0, name: Tesla P100-SXM2-16GB, pci bus id: 0002:01:00.0)
+INFO:root.DataLoader:only leaf nodes will be used as labels - True
+INFO:root.DataLoader:using ngrams of size 3 as feature representation
+INFO:root.DataLoader:only leaf nodes will be used as labels - True
+INFO:root.DataLoader:using ngrams of size 3 as feature representation
+INFO:encoder:shape_cnnout-(?, 57, 32)
+INFO:encoder:shape_maxpool-(?, 1824)
+INFO:encoder:shape_encoderout-(?, 1024)
+INFO:root:built encoder
+INFO:root.RNNDecoder:input label embedding-(?, 2, 128)
+INFO:root.RNNDecoder:final decoder out shape (?, 128)
+INFO:root:built decoder
+INFO:root:starting epochs
+INFO:root:params - trainsize-293, validsie-73, rootfunc-, batchsize-64
+INFO:root.DataLoader:opening file - /home/sathap1/workspace/bioFunctionPrediction/data/data_BP/train_seqs_BP.fasta.gz
+INFO:root.DataLoader:read file - /home/sathap1/workspace/bioFunctionPrediction/data/data_BP/train_seqs_BP.fasta.gz
+INFO:root:step-0, loss-0.949999988079071
+INFO:root:min-0.8961012959480286, max-0.9999997615814209
+INFO:root:step-1, loss-0.8700000047683716
+INFO:root:min-0.7706661820411682, max-1.0
+INFO:root:step-2, loss-0.8199999928474426
+INFO:root:min-0.5830696821212769, max-1.0
+INFO:root:step-3, loss-0.800000011920929
+INFO:root:min-0.5870760679244995, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-4, loss-0.7799999713897705
+INFO:root:min-0.42109835147857666, max-1.0
+INFO:root:step-5, loss-0.7799999713897705
+INFO:root:min-0.5599260330200195, max-1.0
+INFO:root:step-6, loss-0.800000011920929
+INFO:root:min-0.5639178156852722, max-1.0
+INFO:root:step-7, loss-0.7799999713897705
+INFO:root:min-0.5025513172149658, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-8, loss-0.7799999713897705
+INFO:root:min-0.5992992520332336, max-1.0
+INFO:root:step-9, loss-0.7799999713897705
+INFO:root:min-0.5649684071540833, max-1.0
+INFO:root:step-10, loss-0.7799999713897705
+INFO:root:min-0.4108257293701172, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-11, loss-0.7799999713897705
+INFO:root:min-0.5622753500938416, max-1.0
+INFO:root:step-12, loss-0.7799999713897705
+INFO:root:min-0.5603455901145935, max-1.0
+INFO:root:step-13, loss-0.800000011920929
+INFO:root:min-0.6366234421730042, max-1.0
+INFO:root:step-14, loss-0.7900000214576721
+INFO:root:min-0.556204617023468, max-1.0
+INFO:root:step-15, loss-0.7900000214576721
+INFO:root:min-0.46734875440597534, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-16, loss-0.800000011920929
+INFO:root:min-0.5778650641441345, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-17, loss-0.7699999809265137
+INFO:root:min-0.6081631183624268, max-1.0
+INFO:root:step-18, loss-0.7799999713897705
+INFO:root:min-0.5751395225524902, max-1.0
+INFO:root:step-19, loss-0.7799999713897705
+INFO:root:min-0.5924553275108337, max-1.0
+INFO:root:step-20, loss-0.7799999713897705
+INFO:root:min-0.5988674163818359, max-1.0
+INFO:root:step-21, loss-0.7900000214576721
+INFO:root:min-0.5599488615989685, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-22, loss-0.7799999713897705
+INFO:root:min-0.5638908743858337, max-1.0
+INFO:root:step-23, loss-0.7799999713897705
+INFO:root:min-0.5618035197257996, max-1.0
+INFO:root:step-24, loss-0.7699999809265137
+INFO:root:min-0.5541136860847473, max-1.0
+INFO:root:step-25, loss-0.7699999809265137
+INFO:root:min-0.49131202697753906, max-1.0
+INFO:root:step-26, loss-0.7799999713897705
+INFO:root:min-0.5944750308990479, max-1.0
+INFO:root:step-27, loss-0.7799999713897705
+INFO:root:min-0.5589144229888916, max-1.0
+INFO:root:step-28, loss-0.7799999713897705
+INFO:root:min-0.5347415208816528, max-1.0
+INFO:root:step-29, loss-0.7799999713897705
+INFO:root:min-0.6041569709777832, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-30, loss-0.800000011920929
+INFO:root:min-0.5688385367393494, max-1.0
+INFO:root:step-31, loss-0.7799999713897705
+INFO:root:min-0.5250004529953003, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-32, loss-0.7699999809265137
+INFO:root:min-0.6036579012870789, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-33, loss-0.800000011920929
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-34, loss-0.8100000023841858
+INFO:root:min-0.6131893396377563, max-1.0
+INFO:root:step-35, loss-0.7900000214576721
+INFO:root:min-0.6070753931999207, max-1.0
+INFO:root:step-36, loss-0.7900000214576721
+INFO:root:min-0.5683321952819824, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-37, loss-0.7799999713897705
+INFO:root:min-0.5726556777954102, max-1.0
+INFO:root:step-38, loss-0.800000011920929
+INFO:root:min-0.5594494342803955, max-1.0
+INFO:root:step-39, loss-0.800000011920929
+INFO:root:min-0.5205709934234619, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-40, loss-0.7900000214576721
+INFO:root:min-0.5815407633781433, max-1.0
+INFO:root:step-41, loss-0.7799999713897705
+INFO:root:min-0.586989164352417, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-42, loss-0.7699999809265137
+INFO:root:min-0.5188692808151245, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-43, loss-0.800000011920929
+INFO:root:min-0.5621051788330078, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-44, loss-0.7699999809265137
+INFO:root:min-0.5721758008003235, max-1.0
+INFO:root:step-45, loss-0.7599999904632568
+INFO:root:min-0.4973936676979065, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-46, loss-0.7699999809265137
+INFO:root:min-0.49055880308151245, max-1.0
+INFO:root:step-47, loss-0.7699999809265137
+INFO:root:min-0.531762421131134, max-1.0
+INFO:root:step-48, loss-0.7900000214576721
+INFO:root:min-0.5846375226974487, max-1.0
+INFO:root:step-49, loss-0.7799999713897705
+INFO:root:min-0.6142801642417908, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-50, loss-0.7799999713897705
+INFO:root:min-0.584177553653717, max-1.0
+INFO:root:step-51, loss-0.7900000214576721
+INFO:root:min-0.5879298448562622, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-52, loss-0.7799999713897705
+INFO:root:min-0.5829163789749146, max-1.0
+INFO:root:step-53, loss-0.7699999809265137
+INFO:root:min-0.5683321952819824, max-1.0
+INFO:root:step-54, loss-0.7799999713897705
+INFO:root:min-0.5590184926986694, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-55, loss-0.7799999713897705
+INFO:root:min-0.4642278552055359, max-1.0
+INFO:root:step-56, loss-0.7900000214576721
+INFO:root:min-0.581349790096283, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-57, loss-0.7699999809265137
+INFO:root:min-0.5138816237449646, max-1.0
+INFO:root:step-58, loss-0.7900000214576721
+INFO:root:min-0.5683321952819824, max-1.0
+INFO:root:step-59, loss-0.800000011920929
+INFO:root:min-0.5659704208374023, max-1.0
+INFO:root:step-60, loss-0.7799999713897705
+INFO:root:min-0.5598735809326172, max-1.0
+INFO:root:step-61, loss-0.7799999713897705
+INFO:root:min-0.5724325180053711, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-62, loss-0.7900000214576721
+INFO:root:min-0.5748705863952637, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-63, loss-0.7900000214576721
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-64, loss-0.7799999713897705
+INFO:root:min-0.5127158761024475, max-1.0
+INFO:root:step-65, loss-0.800000011920929
+INFO:root:min-0.5702718496322632, max-1.0
+INFO:root:step-66, loss-0.7900000214576721
+INFO:root:min-0.5463206768035889, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-67, loss-0.7699999809265137
+INFO:root:min-0.5297049880027771, max-1.0
+INFO:root:step-68, loss-0.800000011920929
+INFO:root:min-0.5131151676177979, max-1.0
+INFO:root:step-69, loss-0.7799999713897705
+INFO:root:min-0.5517692565917969, max-1.0
+INFO:root:step-70, loss-0.7900000214576721
+INFO:root:min-0.5265656113624573, max-1.0
+INFO:root:step-71, loss-0.800000011920929
+INFO:root:min-0.5638908743858337, max-1.0
+INFO:root:step-72, loss-0.7699999809265137
+INFO:root:min-0.5582951903343201, max-1.0
+INFO:root:step-73, loss-0.7900000214576721
+INFO:root:min-0.5805585384368896, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-74, loss-0.7799999713897705
+INFO:root:min-0.6030555963516235, max-1.0
+INFO:root:step-75, loss-0.800000011920929
+INFO:root:min-0.5606357455253601, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-76, loss-0.7599999904632568
+INFO:root:min-0.5878103971481323, max-1.0
+INFO:root:step-77, loss-0.7799999713897705
+INFO:root:min-0.5831006169319153, max-1.0
+INFO:root:step-78, loss-0.7799999713897705
+INFO:root:min-0.5860280990600586, max-1.0
+INFO:root:step-79, loss-0.800000011920929
+INFO:root:min-0.5165720582008362, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-80, loss-0.7699999809265137
+INFO:root:min-0.5264943838119507, max-1.0
+INFO:root:step-81, loss-0.7799999713897705
+INFO:root:min-0.5414997339248657, max-1.0
+INFO:root:step-82, loss-0.7599999904632568
+INFO:root:min-0.49320274591445923, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-83, loss-0.800000011920929
+INFO:root:min-0.5407397747039795, max-1.0
+INFO:root:step-84, loss-0.7699999809265137
+INFO:root:min-0.5182040929794312, max-1.0
+INFO:root:step-85, loss-0.7900000214576721
+INFO:root:min-0.5407397747039795, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-86, loss-0.7599999904632568
+INFO:root:min-0.5143855214118958, max-1.0
+INFO:root:step-87, loss-0.7900000214576721
+INFO:root:min-0.6017066836357117, max-1.0
+INFO:root:step-88, loss-0.7900000214576721
+INFO:root:min-0.4708883762359619, max-1.0
+INFO:root:step-89, loss-0.7900000214576721
+INFO:root:min-0.5877512097358704, max-1.0
+INFO:root:step-90, loss-0.800000011920929
+INFO:root:min-0.5943386554718018, max-1.0
+INFO:root:step-91, loss-0.7900000214576721
+INFO:root:min-0.5865867137908936, max-1.0
+INFO:root:step-92, loss-0.800000011920929
+INFO:root:min-0.5545473098754883, max-1.0
+INFO:root:step-93, loss-0.7799999713897705
+INFO:root:min-0.5701335072517395, max-1.0
+INFO:root:step-94, loss-0.800000011920929
+INFO:root:min-0.5925112962722778, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-95, loss-0.7799999713897705
+INFO:root:min-0.5265656113624573, max-1.0
+INFO:root:step-96, loss-0.800000011920929
+INFO:root:min-0.5274001359939575, max-1.0
+INFO:root:step-97, loss-0.7900000214576721
+INFO:root:min-0.518246054649353, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-98, loss-0.7699999809265137
+INFO:root:min-0.571036696434021, max-1.0
+INFO:root:step-99, loss-0.7799999713897705
+INFO:root:min-0.6233083009719849, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-100, loss-0.7799999713897705
+INFO:root:min-0.5515735149383545, max-1.0
+INFO:root:step-101, loss-0.7900000214576721
+INFO:root:min-0.5517692565917969, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-102, loss-0.7900000214576721
+INFO:root:min-0.5598580837249756, max-1.0
+INFO:root:step-103, loss-0.800000011920929
+INFO:root:min-0.6007465124130249, max-1.0
+INFO:root:step-104, loss-0.7699999809265137
+INFO:root:min-0.5346648693084717, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-105, loss-0.7900000214576721
+INFO:root:min-0.5276650786399841, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-106, loss-0.7599999904632568
+INFO:root:min-0.5395067930221558, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-107, loss-0.7799999713897705
+INFO:root:min-0.5662678480148315, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-108, loss-0.7900000214576721
+INFO:root:min-0.5216758847236633, max-1.0
+INFO:root:step-109, loss-0.7900000214576721
+INFO:root:min-0.5951937437057495, max-1.0
+INFO:root:step-110, loss-0.7799999713897705
+INFO:root:min-0.6001924276351929, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-111, loss-0.7699999809265137
+INFO:root:min-0.5266388058662415, max-1.0
+INFO:root:step-112, loss-0.7799999713897705
+INFO:root:min-0.6054401397705078, max-1.0
+INFO:root:step-113, loss-0.7799999713897705
+INFO:root:min-0.5600025057792664, max-1.0
+INFO:root:step-114, loss-0.7799999713897705
+INFO:root:min-0.5361554622650146, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-115, loss-0.7699999809265137
+INFO:root:min-0.5665338039398193, max-1.0
+INFO:root:step-116, loss-0.7699999809265137
+INFO:root:min-0.5798735618591309, max-1.0
+INFO:root:step-117, loss-0.7799999713897705
+INFO:root:min-0.5683321952819824, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-118, loss-0.7799999713897705
+INFO:root:min-0.5577796697616577, max-1.0
+INFO:root:step-119, loss-0.7900000214576721
+INFO:root:min-0.5831300616264343, max-1.0
+INFO:root:step-120, loss-0.7599999904632568
+INFO:root:min-0.46459972858428955, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-121, loss-0.7900000214576721
+INFO:root:min-0.5876302719116211, max-1.0
+INFO:root:step-122, loss-0.7799999713897705
+INFO:root:min-0.5669221878051758, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-123, loss-0.7799999713897705
+INFO:root:min-0.5656314492225647, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-124, loss-0.7900000214576721
+INFO:root:min-0.5726454257965088, max-1.0
+INFO:root:step-125, loss-0.800000011920929
+INFO:root:min-0.4235858917236328, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-126, loss-0.8100000023841858
+INFO:root:min-0.5728752017021179, max-1.0
+INFO:root:step-127, loss-0.8100000023841858
+INFO:root:min-0.5318095088005066, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-128, loss-0.7900000214576721
+INFO:root:min-0.5689149498939514, max-1.0
+INFO:root:step-129, loss-0.7900000214576721
+INFO:root:min-0.49030041694641113, max-1.0
+INFO:root:step-130, loss-0.800000011920929
+INFO:root:min-0.6000045537948608, max-1.0
+INFO:root:step-131, loss-0.7799999713897705
+INFO:root:min-0.5555179119110107, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-132, loss-0.8299999833106995
+INFO:root:min-0.5966491103172302, max-1.0
+INFO:root:step-133, loss-0.7699999809265137
+INFO:root:min-0.5432114005088806, max-1.0
+INFO:root:step-134, loss-0.7799999713897705
+INFO:root:min-0.5210791230201721, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-135, loss-0.7599999904632568
+INFO:root:min-0.5577797889709473, max-1.0
+INFO:root:step-136, loss-0.7699999809265137
+INFO:root:min-0.5905189514160156, max-1.0
+INFO:root:step-137, loss-0.7900000214576721
+INFO:root:min-0.575621485710144, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-138, loss-0.7699999809265137
+INFO:root:min-0.5830471515655518, max-1.0
+INFO:root:step-139, loss-0.800000011920929
+INFO:root:min-0.6071306467056274, max-1.0
+INFO:root:step-140, loss-0.7799999713897705
+INFO:root:min-0.5865867137908936, max-1.0
+INFO:root:step-141, loss-0.7699999809265137
+INFO:root:min-0.5400638580322266, max-1.0
+INFO:root:step-142, loss-0.7900000214576721
+INFO:root:min-0.5015240907669067, max-1.0
+INFO:root:step-143, loss-0.7900000214576721
+INFO:root:min-0.5331823229789734, max-1.0
+INFO:root:step-144, loss-0.7599999904632568
+INFO:root:min-0.5677666664123535, max-1.0
+INFO:root:step-145, loss-0.7799999713897705
+INFO:root:min-0.551586389541626, max-1.0
+INFO:root:step-146, loss-0.7799999713897705
+INFO:root:min-0.5122299194335938, max-1.0
+INFO:root:step-147, loss-0.7799999713897705
+INFO:root:min-0.6189661622047424, max-1.0
+INFO:root:step-148, loss-0.7799999713897705
+INFO:root:min-0.5905463695526123, max-1.0
+INFO:root:step-149, loss-0.7900000214576721
+INFO:root:min-0.5271894931793213, max-1.0
+INFO:root:step-150, loss-0.7799999713897705
+INFO:root:min-0.5495275259017944, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-151, loss-0.7900000214576721
+INFO:root:min-0.5940805077552795, max-1.0
+INFO:root:step-152, loss-0.7799999713897705
+INFO:root:min-0.5318095684051514, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-153, loss-0.8100000023841858
+INFO:root:min-0.552395224571228, max-1.0
+INFO:root:step-154, loss-0.7799999713897705
+INFO:root:min-0.5495275259017944, max-1.0
+INFO:root:step-155, loss-0.7799999713897705
+INFO:root:min-0.6106671094894409, max-1.0
+INFO:root:step-156, loss-0.7699999809265137
+INFO:root:min-0.5487815141677856, max-1.0
+INFO:root:step-157, loss-0.7900000214576721
+INFO:root:min-0.49272453784942627, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-158, loss-0.7699999809265137
+INFO:root:min-0.5347975492477417, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-159, loss-0.7900000214576721
+INFO:root:min-0.5680339932441711, max-1.0
+INFO:root:step-160, loss-0.7799999713897705
+INFO:root:min-0.568941593170166, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-161, loss-0.800000011920929
+INFO:root:min-0.5477662086486816, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-162, loss-0.7699999809265137
+INFO:root:min-0.5772443413734436, max-1.0
+INFO:root:step-163, loss-0.7699999809265137
+INFO:root:min-0.53719562292099, max-1.0
+INFO:root:step-164, loss-0.7900000214576721
+INFO:root:min-0.5986968874931335, max-1.0
+INFO:root:step-165, loss-0.800000011920929
+INFO:root:min-0.5712720155715942, max-1.0
+INFO:root:step-166, loss-0.7900000214576721
+INFO:root:min-0.5808256268501282, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-167, loss-0.8100000023841858
+INFO:root:min-0.5639108419418335, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-168, loss-0.800000011920929
+INFO:root:min-0.5451852083206177, max-1.0
+INFO:root:step-169, loss-0.7599999904632568
+INFO:root:min-0.5297049880027771, max-1.0
+INFO:root:step-170, loss-0.7599999904632568
+INFO:root:min-0.5638171434402466, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-171, loss-0.7900000214576721
+INFO:root:min-0.6058558225631714, max-1.0
+INFO:root:step-172, loss-0.7799999713897705
+INFO:root:min-0.6025503873825073, max-1.0
+INFO:root:step-173, loss-0.7900000214576721
+INFO:root:min-0.570391058921814, max-1.0
+INFO:root:step-174, loss-0.7900000214576721
+INFO:root:min-0.5796951055526733, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-175, loss-0.7599999904632568
+INFO:root:min-0.5017919540405273, max-1.0
+INFO:root:step-176, loss-0.800000011920929
+INFO:root:min-0.6190491914749146, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-177, loss-0.7900000214576721
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-178, loss-0.7699999809265137
+INFO:root:min-0.5809537172317505, max-1.0
+INFO:root:step-179, loss-0.7699999809265137
+INFO:root:min-0.5061514973640442, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-180, loss-0.7900000214576721
+INFO:root:min-0.6098837852478027, max-1.0
+INFO:root:step-181, loss-0.7799999713897705
+INFO:root:min-0.594413697719574, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-182, loss-0.75
+INFO:root:min-0.5489787459373474, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-183, loss-0.7799999713897705
+INFO:root:min-0.533319354057312, max-1.0
+INFO:root:step-184, loss-0.7599999904632568
+INFO:root:min-0.5902846455574036, max-1.0
+INFO:root:step-185, loss-0.7699999809265137
+INFO:root:min-0.5590184926986694, max-1.0
+INFO:root:step-186, loss-0.800000011920929
+INFO:root:min-0.6050028800964355, max-1.0
+INFO:root:step-187, loss-0.75
+INFO:root:min-0.528987467288971, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-188, loss-0.7699999809265137
+INFO:root:min-0.6149919033050537, max-1.0
+INFO:root:step-189, loss-0.7799999713897705
+INFO:root:min-0.5500115752220154, max-1.0
+INFO:root:step-190, loss-0.800000011920929
+INFO:root:min-0.5414997339248657, max-1.0
+INFO:root:step-191, loss-0.800000011920929
+INFO:root:min-0.4695327877998352, max-1.0
+INFO:root:step-192, loss-0.7900000214576721
+INFO:root:min-0.5700545907020569, max-1.0
+INFO:root:step-193, loss-0.7699999809265137
+INFO:root:min-0.559333860874176, max-1.0
+INFO:root:step-194, loss-0.7799999713897705
+INFO:root:min-0.5844271183013916, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-195, loss-0.7900000214576721
+INFO:root:min-0.5532212257385254, max-1.0
+INFO:root:step-196, loss-0.7900000214576721
+INFO:root:min-0.5934029817581177, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-197, loss-0.7799999713897705
+INFO:root:min-0.4776437282562256, max-1.0
+INFO:root:step-198, loss-0.7699999809265137
+INFO:root:min-0.5998080372810364, max-1.0
+INFO:root:step-199, loss-0.800000011920929
+INFO:root:min-0.5692994594573975, max-1.0
+INFO:root:step-200, loss-0.8100000023841858
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-201, loss-0.7699999809265137
+INFO:root:min-0.43888604640960693, max-1.0
+INFO:root:step-202, loss-0.7599999904632568
+INFO:root:min-0.5703911185264587, max-1.0
+INFO:root:step-203, loss-0.7900000214576721
+INFO:root:min-0.6066168546676636, max-1.0
+INFO:root:step-204, loss-0.7799999713897705
+INFO:root:min-0.6119592785835266, max-1.0
+INFO:root:step-205, loss-0.800000011920929
+INFO:root:min-0.5768924951553345, max-1.0
+INFO:root:step-206, loss-0.7699999809265137
+INFO:root:min-0.5780555009841919, max-1.0
+INFO:root:step-207, loss-0.7799999713897705
+INFO:root:min-0.5354849100112915, max-1.0
+INFO:root:step-208, loss-0.7699999809265137
+INFO:root:min-0.581349790096283, max-1.0
+INFO:root:step-209, loss-0.7799999713897705
+INFO:root:min-0.5848066806793213, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-210, loss-0.7699999809265137
+INFO:root:min-0.49072009325027466, max-1.0
+INFO:root:step-211, loss-0.7799999713897705
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-212, loss-0.7699999809265137
+INFO:root:min-0.5346325039863586, max-1.0
+INFO:root:step-213, loss-0.7799999713897705
+INFO:root:min-0.5687699317932129, max-1.0
+INFO:root:step-214, loss-0.7699999809265137
+INFO:root:min-0.5454105138778687, max-1.0
+INFO:root:step-215, loss-0.7799999713897705
+INFO:root:min-0.45888465642929077, max-1.0
+INFO:root:step-216, loss-0.7900000214576721
+INFO:root:min-0.5517692565917969, max-1.0
+INFO:root:step-217, loss-0.7900000214576721
+INFO:root:min-0.5888538360595703, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-218, loss-0.7900000214576721
+INFO:root:min-0.5615110993385315, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-219, loss-0.8100000023841858
+INFO:root:min-0.5918012857437134, max-1.0
+INFO:root:step-220, loss-0.800000011920929
+INFO:root:min-0.5623531937599182, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-221, loss-0.7799999713897705
+INFO:root:min-0.4470025300979614, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-222, loss-0.7799999713897705
+INFO:root:min-0.5849925875663757, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-223, loss-0.7900000214576721
+INFO:root:min-0.6022462844848633, max-1.0
+INFO:root:step-224, loss-0.7799999713897705
+INFO:root:min-0.5935810804367065, max-1.0
+INFO:root:step-225, loss-0.7900000214576721
+INFO:root:min-0.5077685713768005, max-1.0
+INFO:root:step-226, loss-0.75
+INFO:root:min-0.5743208527565002, max-1.0
+INFO:root:step-227, loss-0.800000011920929
+INFO:root:min-0.521452784538269, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-228, loss-0.7799999713897705
+INFO:root:min-0.5689675211906433, max-1.0
+INFO:root:step-229, loss-0.7699999809265137
+INFO:root:min-0.5336312055587769, max-1.0
+INFO:root:step-230, loss-0.7900000214576721
+INFO:root:min-0.6421006917953491, max-1.0
+INFO:root:step-231, loss-0.7799999713897705
+INFO:root:min-0.5865341424942017, max-1.0
+INFO:root:step-232, loss-0.7699999809265137
+INFO:root:min-0.5879379510879517, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-233, loss-0.7400000095367432
+INFO:root:min-0.5167139768600464, max-1.0
+INFO:root:step-234, loss-0.7799999713897705
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-235, loss-0.800000011920929
+INFO:root:min-0.5933181047439575, max-1.0
+INFO:root:step-236, loss-0.7799999713897705
+INFO:root:min-0.6069274544715881, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-237, loss-0.7599999904632568
+INFO:root:min-0.4987705945968628, max-1.0
+INFO:root:step-238, loss-0.7900000214576721
+INFO:root:min-0.5465102195739746, max-1.0
+INFO:root:step-239, loss-0.7599999904632568
+INFO:root:min-0.5403609275817871, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-240, loss-0.7900000214576721
+INFO:root:min-0.6314563751220703, max-1.0
+INFO:root:step-241, loss-0.7900000214576721
+INFO:root:min-0.5385270118713379, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-242, loss-0.800000011920929
+INFO:root:min-0.521712064743042, max-1.0
+INFO:root:step-243, loss-0.7799999713897705
+INFO:root:min-0.6139695644378662, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-244, loss-0.7799999713897705
+INFO:root:min-0.6025503873825073, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-245, loss-0.7799999713897705
+INFO:root:min-0.5940805077552795, max-1.0
+INFO:root:step-246, loss-0.7799999713897705
+INFO:root:min-0.5517693161964417, max-1.0
+INFO:root:step-247, loss-0.7699999809265137
+INFO:root:min-0.5336312055587769, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-248, loss-0.75
+INFO:root:min-0.5203530788421631, max-1.0
+INFO:root:step-249, loss-0.7699999809265137
+INFO:root:min-0.5334358811378479, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-250, loss-0.7799999713897705
+INFO:root:min-0.48200106620788574, max-1.0
+INFO:root:step-251, loss-0.7900000214576721
+INFO:root:min-0.5432114005088806, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-252, loss-0.7699999809265137
+INFO:root:min-0.5626630783081055, max-1.0
+INFO:root:step-253, loss-0.7799999713897705
+INFO:root:min-0.5235006213188171, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-254, loss-0.7699999809265137
+INFO:root:min-0.5419826507568359, max-1.0
+INFO:root:step-255, loss-0.7799999713897705
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-256, loss-0.7699999809265137
+INFO:root:min-0.5198906064033508, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-257, loss-0.800000011920929
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-258, loss-0.7599999904632568
+INFO:root:min-0.4693133234977722, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-259, loss-0.7799999713897705
+INFO:root:min-0.5364353060722351, max-1.0
+INFO:root:step-260, loss-0.7699999809265137
+INFO:root:min-0.5414800047874451, max-1.0
+INFO:root:step-261, loss-0.800000011920929
+INFO:root:min-0.6364732384681702, max-1.0
+INFO:root:step-262, loss-0.7699999809265137
+INFO:root:min-0.570391058921814, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-263, loss-0.7699999809265137
+INFO:root:min-0.5853145122528076, max-1.0
+INFO:root:step-264, loss-0.8100000023841858
+INFO:root:min-0.6108431816101074, max-1.0
+INFO:root:step-265, loss-0.800000011920929
+INFO:root:min-0.6250252723693848, max-1.0
+INFO:root:step-266, loss-0.8100000023841858
+INFO:root:min-0.5318838357925415, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-267, loss-0.7799999713897705
+INFO:root:min-0.48764532804489136, max-1.0
+INFO:root:step-268, loss-0.7799999713897705
+INFO:root:min-0.6066168546676636, max-1.0
+INFO:root:step-269, loss-0.7799999713897705
+INFO:root:min-0.49621498584747314, max-1.0
+INFO:root:step-270, loss-0.7900000214576721
+INFO:root:min-0.5835503935813904, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-271, loss-0.7900000214576721
+INFO:root:min-0.58753502368927, max-1.0
+INFO:root:step-272, loss-0.7900000214576721
+INFO:root:min-0.5446206331253052, max-1.0
+INFO:root:step-273, loss-0.7799999713897705
+INFO:root:min-0.5622665286064148, max-1.0
+INFO:root:step-274, loss-0.7599999904632568
+INFO:root:min-0.4344773292541504, max-1.0
+INFO:root:step-275, loss-0.7799999713897705
+INFO:root:min-0.5730763077735901, max-1.0
+INFO:root:step-276, loss-0.7900000214576721
+INFO:root:min-0.5165565013885498, max-1.0
+INFO:root:step-277, loss-0.7799999713897705
+INFO:root:min-0.5447611212730408, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-278, loss-0.7799999713897705
+INFO:root:min-0.5809849500656128, max-1.0
+INFO:root:step-279, loss-0.7799999713897705
+INFO:root:min-0.5945832133293152, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-280, loss-0.8100000023841858
+INFO:root:min-0.4726959466934204, max-1.0
+INFO:root:step-281, loss-0.7699999809265137
+INFO:root:min-0.5700627565383911, max-1.0
+INFO:root:step-282, loss-0.7599999904632568
+INFO:root:min-0.5524065494537354, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-283, loss-0.7799999713897705
+INFO:root:min-0.5823822021484375, max-1.0
+INFO:root:step-284, loss-0.7900000214576721
+INFO:root:min-0.5892287492752075, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-285, loss-0.7900000214576721
+INFO:root:min-0.46824073791503906, max-1.0
+INFO:root:step-286, loss-0.7799999713897705
+INFO:root:min-0.5575858950614929, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-287, loss-0.7699999809265137
+INFO:root:min-0.4992067217826843, max-1.0
+INFO:root:step-288, loss-0.7799999713897705
+INFO:root:min-0.5579620599746704, max-1.0
+INFO:root:step-289, loss-0.7799999713897705
+INFO:root:min-0.5939226150512695, max-1.0
+INFO:root:step-290, loss-0.7699999809265137
+INFO:root:min-0.5368832349777222, max-1.0
+INFO:root:step-291, loss-0.7699999809265137
+INFO:root:min-0.5291521549224854, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-292, loss-0.7799999713897705
+INFO:root:min-0.6040588617324829, max-1.0
+INFO:root:beginning validation
+INFO:root.DataLoader:opening file - /home/sathap1/workspace/bioFunctionPrediction/data/data_BP/validation_seqs_BP.fasta.gz
+INFO:root.DataLoader:read file - /home/sathap1/workspace/bioFunctionPrediction/data/data_BP/validation_seqs_BP.fasta.gz
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:epoch: 0 
+ precision: 0.0, recall: 0.0, f1: 0.0
+INFO:root:step-293, loss-0.7900000214576721
+INFO:root:min-0.51658034324646, max-1.0
+INFO:root:step-294, loss-0.7799999713897705
+INFO:root:min-0.5967356562614441, max-1.0
+INFO:root:step-295, loss-0.7900000214576721
+INFO:root:min-0.5078880786895752, max-1.0
+INFO:root:step-296, loss-0.7900000214576721
+INFO:root:min-0.5648187398910522, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-297, loss-0.7699999809265137
+INFO:root:min-0.41194868087768555, max-1.0
+INFO:root:step-298, loss-0.7799999713897705
+INFO:root:min-0.5599257349967957, max-1.0
+INFO:root:step-299, loss-0.800000011920929
+INFO:root:min-0.563917875289917, max-1.0
+INFO:root:step-300, loss-0.7799999713897705
+INFO:root:min-0.5025511980056763, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-301, loss-0.7799999713897705
+INFO:root:min-0.5992992520332336, max-1.0
+INFO:root:step-302, loss-0.7799999713897705
+INFO:root:min-0.5649684071540833, max-1.0
+INFO:root:step-303, loss-0.7799999713897705
+INFO:root:min-0.4108257293701172, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-304, loss-0.7799999713897705
+INFO:root:min-0.5622752904891968, max-1.0
+INFO:root:step-305, loss-0.7799999713897705
+INFO:root:min-0.5603455901145935, max-1.0
+INFO:root:step-306, loss-0.800000011920929
+INFO:root:min-0.6366234421730042, max-1.0
+INFO:root:step-307, loss-0.7900000214576721
+INFO:root:min-0.556204617023468, max-1.0
+INFO:root:step-308, loss-0.7900000214576721
+INFO:root:min-0.46734869480133057, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-309, loss-0.800000011920929
+INFO:root:min-0.5778650641441345, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-310, loss-0.7699999809265137
+INFO:root:min-0.6081631183624268, max-1.0
+INFO:root:step-311, loss-0.7799999713897705
+INFO:root:min-0.5751395225524902, max-1.0
+INFO:root:step-312, loss-0.7799999713897705
+INFO:root:min-0.5924553275108337, max-1.0
+INFO:root:step-313, loss-0.7799999713897705
+INFO:root:min-0.5988674163818359, max-1.0
+INFO:root:step-314, loss-0.7900000214576721
+INFO:root:min-0.5599488615989685, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-315, loss-0.7799999713897705
+INFO:root:min-0.5638908743858337, max-1.0
+INFO:root:step-316, loss-0.7799999713897705
+INFO:root:min-0.5618035197257996, max-1.0
+INFO:root:step-317, loss-0.7699999809265137
+INFO:root:min-0.5541136860847473, max-1.0
+INFO:root:step-318, loss-0.7699999809265137
+INFO:root:min-0.49131202697753906, max-1.0
+INFO:root:step-319, loss-0.7799999713897705
+INFO:root:min-0.5944750308990479, max-1.0
+INFO:root:step-320, loss-0.7799999713897705
+INFO:root:min-0.5589144229888916, max-1.0
+INFO:root:step-321, loss-0.7799999713897705
+INFO:root:min-0.5347415208816528, max-1.0
+INFO:root:step-322, loss-0.7799999713897705
+INFO:root:min-0.6041569709777832, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-323, loss-0.800000011920929
+INFO:root:min-0.5688385963439941, max-1.0
+INFO:root:step-324, loss-0.7799999713897705
+INFO:root:min-0.5250005125999451, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-325, loss-0.7699999809265137
+INFO:root:min-0.6036578416824341, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-326, loss-0.800000011920929
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-327, loss-0.8100000023841858
+INFO:root:min-0.6131893396377563, max-1.0
+INFO:root:step-328, loss-0.7900000214576721
+INFO:root:min-0.6070753931999207, max-1.0
+INFO:root:step-329, loss-0.7900000214576721
+INFO:root:min-0.5683321952819824, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-330, loss-0.7799999713897705
+INFO:root:min-0.5726556777954102, max-1.0
+INFO:root:step-331, loss-0.800000011920929
+INFO:root:min-0.5594494342803955, max-1.0
+INFO:root:step-332, loss-0.800000011920929
+INFO:root:min-0.5205709934234619, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-333, loss-0.7900000214576721
+INFO:root:min-0.5815407037734985, max-1.0
+INFO:root:step-334, loss-0.7799999713897705
+INFO:root:min-0.586989164352417, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-335, loss-0.7699999809265137
+INFO:root:min-0.5188692808151245, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-336, loss-0.800000011920929
+INFO:root:min-0.5621051788330078, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-337, loss-0.7699999809265137
+INFO:root:min-0.5721758008003235, max-1.0
+INFO:root:step-338, loss-0.7599999904632568
+INFO:root:min-0.4973936676979065, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-339, loss-0.7699999809265137
+INFO:root:min-0.49055880308151245, max-1.0
+INFO:root:step-340, loss-0.7699999809265137
+INFO:root:min-0.5317623615264893, max-1.0
+INFO:root:step-341, loss-0.7900000214576721
+INFO:root:min-0.5846375226974487, max-1.0
+INFO:root:step-342, loss-0.7799999713897705
+INFO:root:min-0.6142801642417908, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-343, loss-0.7799999713897705
+INFO:root:min-0.584177553653717, max-1.0
+INFO:root:step-344, loss-0.7900000214576721
+INFO:root:min-0.5879298448562622, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-345, loss-0.7799999713897705
+INFO:root:min-0.5829163789749146, max-1.0
+INFO:root:step-346, loss-0.7699999809265137
+INFO:root:min-0.5683322548866272, max-1.0
+INFO:root:step-347, loss-0.7799999713897705
+INFO:root:min-0.5590184926986694, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-348, loss-0.7799999713897705
+INFO:root:min-0.46422791481018066, max-1.0
+INFO:root:step-349, loss-0.7900000214576721
+INFO:root:min-0.5813498497009277, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-350, loss-0.7699999809265137
+INFO:root:min-0.5138816833496094, max-1.0
+INFO:root:step-351, loss-0.7900000214576721
+INFO:root:min-0.5683321952819824, max-1.0
+INFO:root:step-352, loss-0.800000011920929
+INFO:root:min-0.5659704208374023, max-1.0
+INFO:root:step-353, loss-0.7799999713897705
+INFO:root:min-0.5598735809326172, max-1.0
+INFO:root:step-354, loss-0.7799999713897705
+INFO:root:min-0.5724324584007263, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-355, loss-0.7900000214576721
+INFO:root:min-0.5748705863952637, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-356, loss-0.7900000214576721
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-357, loss-0.7799999713897705
+INFO:root:min-0.5127158164978027, max-1.0
+INFO:root:step-358, loss-0.800000011920929
+INFO:root:min-0.5702718496322632, max-1.0
+INFO:root:step-359, loss-0.7900000214576721
+INFO:root:min-0.5463206768035889, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-360, loss-0.7699999809265137
+INFO:root:min-0.5297050476074219, max-1.0
+INFO:root:step-361, loss-0.800000011920929
+INFO:root:min-0.5131151676177979, max-1.0
+INFO:root:step-362, loss-0.7799999713897705
+INFO:root:min-0.5517693161964417, max-1.0
+INFO:root:step-363, loss-0.7900000214576721
+INFO:root:min-0.5265656113624573, max-1.0
+INFO:root:step-364, loss-0.800000011920929
+INFO:root:min-0.5638908743858337, max-1.0
+INFO:root:step-365, loss-0.7699999809265137
+INFO:root:min-0.5582951307296753, max-1.0
+INFO:root:step-366, loss-0.7900000214576721
+INFO:root:min-0.5805585384368896, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-367, loss-0.7799999713897705
+INFO:root:min-0.6030555963516235, max-1.0
+INFO:root:step-368, loss-0.800000011920929
+INFO:root:min-0.5606357455253601, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-369, loss-0.7599999904632568
+INFO:root:min-0.5878104567527771, max-1.0
+INFO:root:step-370, loss-0.7799999713897705
+INFO:root:min-0.5831006169319153, max-1.0
+INFO:root:step-371, loss-0.7799999713897705
+INFO:root:min-0.5860280990600586, max-1.0
+INFO:root:step-372, loss-0.800000011920929
+INFO:root:min-0.516572117805481, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-373, loss-0.7699999809265137
+INFO:root:min-0.5264943838119507, max-1.0
+INFO:root:step-374, loss-0.7799999713897705
+INFO:root:min-0.5414997339248657, max-1.0
+INFO:root:step-375, loss-0.7599999904632568
+INFO:root:min-0.49320274591445923, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-376, loss-0.800000011920929
+INFO:root:min-0.5407397747039795, max-1.0
+INFO:root:step-377, loss-0.7699999809265137
+INFO:root:min-0.5182040333747864, max-1.0
+INFO:root:step-378, loss-0.7900000214576721
+INFO:root:min-0.5407398343086243, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-379, loss-0.7599999904632568
+INFO:root:min-0.5143855214118958, max-1.0
+INFO:root:step-380, loss-0.7900000214576721
+INFO:root:min-0.6017066240310669, max-1.0
+INFO:root:step-381, loss-0.7900000214576721
+INFO:root:min-0.4708883762359619, max-1.0
+INFO:root:step-382, loss-0.7900000214576721
+INFO:root:min-0.5877512693405151, max-1.0
+INFO:root:step-383, loss-0.800000011920929
+INFO:root:min-0.5943386554718018, max-1.0
+INFO:root:step-384, loss-0.7900000214576721
+INFO:root:min-0.5865867137908936, max-1.0
+INFO:root:step-385, loss-0.800000011920929
+INFO:root:min-0.5545473098754883, max-1.0
+INFO:root:step-386, loss-0.7799999713897705
+INFO:root:min-0.5701334476470947, max-1.0
+INFO:root:step-387, loss-0.800000011920929
+INFO:root:min-0.5925113558769226, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-388, loss-0.7799999713897705
+INFO:root:min-0.526565670967102, max-1.0
+INFO:root:step-389, loss-0.800000011920929
+INFO:root:min-0.5274001359939575, max-1.0
+INFO:root:step-390, loss-0.7900000214576721
+INFO:root:min-0.518246054649353, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-391, loss-0.7699999809265137
+INFO:root:min-0.571036696434021, max-1.0
+INFO:root:step-392, loss-0.7799999713897705
+INFO:root:min-0.6233082413673401, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-393, loss-0.7799999713897705
+INFO:root:min-0.5515735149383545, max-1.0
+INFO:root:step-394, loss-0.7900000214576721
+INFO:root:min-0.5517693161964417, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-395, loss-0.7900000214576721
+INFO:root:min-0.5598580837249756, max-1.0
+INFO:root:step-396, loss-0.800000011920929
+INFO:root:min-0.6007465124130249, max-1.0
+INFO:root:step-397, loss-0.7699999809265137
+INFO:root:min-0.5346648693084717, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-398, loss-0.7900000214576721
+INFO:root:min-0.5276651382446289, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-399, loss-0.7599999904632568
+INFO:root:min-0.5395067930221558, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-400, loss-0.7799999713897705
+INFO:root:min-0.5662678480148315, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-401, loss-0.7900000214576721
+INFO:root:min-0.5216758847236633, max-1.0
+INFO:root:step-402, loss-0.7900000214576721
+INFO:root:min-0.5951937437057495, max-1.0
+INFO:root:step-403, loss-0.7799999713897705
+INFO:root:min-0.6001924276351929, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-404, loss-0.7699999809265137
+INFO:root:min-0.5266388058662415, max-1.0
+INFO:root:step-405, loss-0.7799999713897705
+INFO:root:min-0.6054401397705078, max-1.0
+INFO:root:step-406, loss-0.7799999713897705
+INFO:root:min-0.5600025057792664, max-1.0
+INFO:root:step-407, loss-0.7799999713897705
+INFO:root:min-0.5361554622650146, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-408, loss-0.7699999809265137
+INFO:root:min-0.5665338039398193, max-1.0
+INFO:root:step-409, loss-0.7699999809265137
+INFO:root:min-0.5798735618591309, max-1.0
+INFO:root:step-410, loss-0.7799999713897705
+INFO:root:min-0.5683321952819824, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-411, loss-0.7799999713897705
+INFO:root:min-0.5577797889709473, max-1.0
+INFO:root:step-412, loss-0.7900000214576721
+INFO:root:min-0.5831301212310791, max-1.0
+INFO:root:step-413, loss-0.7599999904632568
+INFO:root:min-0.46459972858428955, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-414, loss-0.7900000214576721
+INFO:root:min-0.5876302123069763, max-1.0
+INFO:root:step-415, loss-0.7799999713897705
+INFO:root:min-0.5669221878051758, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-416, loss-0.7799999713897705
+INFO:root:min-0.5656314492225647, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-417, loss-0.7900000214576721
+INFO:root:min-0.5726454854011536, max-1.0
+INFO:root:step-418, loss-0.800000011920929
+INFO:root:min-0.4235859513282776, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-419, loss-0.8100000023841858
+INFO:root:min-0.5728752017021179, max-1.0
+INFO:root:step-420, loss-0.8100000023841858
+INFO:root:min-0.5318095684051514, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-421, loss-0.7900000214576721
+INFO:root:min-0.5689149498939514, max-1.0
+INFO:root:step-422, loss-0.7900000214576721
+INFO:root:min-0.49030041694641113, max-1.0
+INFO:root:step-423, loss-0.800000011920929
+INFO:root:min-0.6000045537948608, max-1.0
+INFO:root:step-424, loss-0.7799999713897705
+INFO:root:min-0.5555179715156555, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-425, loss-0.8299999833106995
+INFO:root:min-0.5966490507125854, max-1.0
+INFO:root:step-426, loss-0.7699999809265137
+INFO:root:min-0.5432114005088806, max-1.0
+INFO:root:step-427, loss-0.7799999713897705
+INFO:root:min-0.5210790634155273, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-428, loss-0.7599999904632568
+INFO:root:min-0.5577797293663025, max-1.0
+INFO:root:step-429, loss-0.7699999809265137
+INFO:root:min-0.5905188918113708, max-1.0
+INFO:root:step-430, loss-0.7900000214576721
+INFO:root:min-0.575621485710144, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-431, loss-0.7699999809265137
+INFO:root:min-0.583047091960907, max-1.0
+INFO:root:step-432, loss-0.800000011920929
+INFO:root:min-0.6071306467056274, max-1.0
+INFO:root:step-433, loss-0.7799999713897705
+INFO:root:min-0.5865867137908936, max-1.0
+INFO:root:step-434, loss-0.7699999809265137
+INFO:root:min-0.5400638580322266, max-1.0
+INFO:root:step-435, loss-0.7900000214576721
+INFO:root:min-0.501524031162262, max-1.0
+INFO:root:step-436, loss-0.7900000214576721
+INFO:root:min-0.5331823229789734, max-1.0
+INFO:root:step-437, loss-0.7599999904632568
+INFO:root:min-0.5677666068077087, max-1.0
+INFO:root:step-438, loss-0.7799999713897705
+INFO:root:min-0.5515864491462708, max-1.0
+INFO:root:step-439, loss-0.7799999713897705
+INFO:root:min-0.5122299194335938, max-1.0
+INFO:root:step-440, loss-0.7799999713897705
+INFO:root:min-0.6189661622047424, max-1.0
+INFO:root:step-441, loss-0.7799999713897705
+INFO:root:min-0.5905463695526123, max-1.0
+INFO:root:step-442, loss-0.7900000214576721
+INFO:root:min-0.5271894931793213, max-1.0
+INFO:root:step-443, loss-0.7799999713897705
+INFO:root:min-0.5495275259017944, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-444, loss-0.7900000214576721
+INFO:root:min-0.5940805077552795, max-1.0
+INFO:root:step-445, loss-0.7799999713897705
+INFO:root:min-0.5318095684051514, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-446, loss-0.8100000023841858
+INFO:root:min-0.552395224571228, max-1.0
+INFO:root:step-447, loss-0.7799999713897705
+INFO:root:min-0.5495275259017944, max-1.0
+INFO:root:step-448, loss-0.7799999713897705
+INFO:root:min-0.6106671094894409, max-1.0
+INFO:root:step-449, loss-0.7699999809265137
+INFO:root:min-0.5487815141677856, max-1.0
+INFO:root:step-450, loss-0.7900000214576721
+INFO:root:min-0.49272453784942627, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-451, loss-0.7699999809265137
+INFO:root:min-0.5347975492477417, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-452, loss-0.7900000214576721
+INFO:root:min-0.5680339932441711, max-1.0
+INFO:root:step-453, loss-0.7799999713897705
+INFO:root:min-0.568941593170166, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-454, loss-0.800000011920929
+INFO:root:min-0.5477662086486816, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-455, loss-0.7699999809265137
+INFO:root:min-0.5772443413734436, max-1.0
+INFO:root:step-456, loss-0.7699999809265137
+INFO:root:min-0.53719562292099, max-1.0
+INFO:root:step-457, loss-0.7900000214576721
+INFO:root:min-0.5986968874931335, max-1.0
+INFO:root:step-458, loss-0.800000011920929
+INFO:root:min-0.571272075176239, max-1.0
+INFO:root:step-459, loss-0.7900000214576721
+INFO:root:min-0.5808256268501282, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-460, loss-0.8100000023841858
+INFO:root:min-0.5639109015464783, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-461, loss-0.800000011920929
+INFO:root:min-0.5451852083206177, max-1.0
+INFO:root:step-462, loss-0.7599999904632568
+INFO:root:min-0.5297049880027771, max-1.0
+INFO:root:step-463, loss-0.7599999904632568
+INFO:root:min-0.5638172030448914, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-464, loss-0.7900000214576721
+INFO:root:min-0.6058558225631714, max-1.0
+INFO:root:step-465, loss-0.7799999713897705
+INFO:root:min-0.6025504469871521, max-1.0
+INFO:root:step-466, loss-0.7900000214576721
+INFO:root:min-0.570391058921814, max-1.0
+INFO:root:step-467, loss-0.7900000214576721
+INFO:root:min-0.5796951055526733, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-468, loss-0.7599999904632568
+INFO:root:min-0.5017919540405273, max-1.0
+INFO:root:step-469, loss-0.800000011920929
+INFO:root:min-0.6190492510795593, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-470, loss-0.7900000214576721
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-471, loss-0.7699999809265137
+INFO:root:min-0.5809537172317505, max-1.0
+INFO:root:step-472, loss-0.7699999809265137
+INFO:root:min-0.5061514973640442, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-473, loss-0.7900000214576721
+INFO:root:min-0.6098837852478027, max-1.0
+INFO:root:step-474, loss-0.7799999713897705
+INFO:root:min-0.594413697719574, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-475, loss-0.75
+INFO:root:min-0.5489786863327026, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-476, loss-0.7799999713897705
+INFO:root:min-0.533319354057312, max-1.0
+INFO:root:step-477, loss-0.7599999904632568
+INFO:root:min-0.5902846455574036, max-1.0
+INFO:root:step-478, loss-0.7699999809265137
+INFO:root:min-0.5590184926986694, max-1.0
+INFO:root:step-479, loss-0.800000011920929
+INFO:root:min-0.6050028800964355, max-1.0
+INFO:root:step-480, loss-0.75
+INFO:root:min-0.5289875268936157, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-481, loss-0.7699999809265137
+INFO:root:min-0.6149919033050537, max-1.0
+INFO:root:step-482, loss-0.7799999713897705
+INFO:root:min-0.5500115752220154, max-1.0
+INFO:root:step-483, loss-0.800000011920929
+INFO:root:min-0.5414997339248657, max-1.0
+INFO:root:step-484, loss-0.800000011920929
+INFO:root:min-0.4695327877998352, max-1.0
+INFO:root:step-485, loss-0.7900000214576721
+INFO:root:min-0.5700545907020569, max-1.0
+INFO:root:step-486, loss-0.7699999809265137
+INFO:root:min-0.559333860874176, max-1.0
+INFO:root:step-487, loss-0.7799999713897705
+INFO:root:min-0.5844270586967468, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-488, loss-0.7900000214576721
+INFO:root:min-0.5532212257385254, max-1.0
+INFO:root:step-489, loss-0.7900000214576721
+INFO:root:min-0.5934029221534729, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-490, loss-0.7799999713897705
+INFO:root:min-0.4776437282562256, max-1.0
+INFO:root:step-491, loss-0.7699999809265137
+INFO:root:min-0.5998080372810364, max-1.0
+INFO:root:step-492, loss-0.800000011920929
+INFO:root:min-0.5692995190620422, max-1.0
+INFO:root:step-493, loss-0.8100000023841858
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-494, loss-0.7699999809265137
+INFO:root:min-0.43888604640960693, max-1.0
+INFO:root:step-495, loss-0.7599999904632568
+INFO:root:min-0.570391058921814, max-1.0
+INFO:root:step-496, loss-0.7900000214576721
+INFO:root:min-0.6066168546676636, max-1.0
+INFO:root:step-497, loss-0.7799999713897705
+INFO:root:min-0.6119592785835266, max-1.0
+INFO:root:step-498, loss-0.800000011920929
+INFO:root:min-0.5768924951553345, max-1.0
+INFO:root:step-499, loss-0.7699999809265137
+INFO:root:min-0.5780554413795471, max-1.0
+INFO:root:step-500, loss-0.7799999713897705
+INFO:root:min-0.5354849100112915, max-1.0
+INFO:root:step-501, loss-0.7699999809265137
+INFO:root:min-0.581349790096283, max-1.0
+INFO:root:step-502, loss-0.7799999713897705
+INFO:root:min-0.5848066806793213, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-503, loss-0.7699999809265137
+INFO:root:min-0.4907200336456299, max-1.0
+INFO:root:step-504, loss-0.7799999713897705
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-505, loss-0.7699999809265137
+INFO:root:min-0.5346325039863586, max-1.0
+INFO:root:step-506, loss-0.7799999713897705
+INFO:root:min-0.5687699317932129, max-1.0
+INFO:root:step-507, loss-0.7699999809265137
+INFO:root:min-0.5454105734825134, max-1.0
+INFO:root:step-508, loss-0.7799999713897705
+INFO:root:min-0.458884596824646, max-1.0
+INFO:root:step-509, loss-0.7900000214576721
+INFO:root:min-0.5517692565917969, max-1.0
+INFO:root:step-510, loss-0.7900000214576721
+INFO:root:min-0.5888537764549255, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-511, loss-0.7900000214576721
+INFO:root:min-0.5615109801292419, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-512, loss-0.8100000023841858
+INFO:root:min-0.5918012857437134, max-1.0
+INFO:root:step-513, loss-0.800000011920929
+INFO:root:min-0.562353253364563, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-514, loss-0.7799999713897705
+INFO:root:min-0.4470025300979614, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-515, loss-0.7799999713897705
+INFO:root:min-0.584992527961731, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-516, loss-0.7900000214576721
+INFO:root:min-0.6022462844848633, max-1.0
+INFO:root:step-517, loss-0.7799999713897705
+INFO:root:min-0.5935810804367065, max-1.0
+INFO:root:step-518, loss-0.7900000214576721
+INFO:root:min-0.5077685117721558, max-1.0
+INFO:root:step-519, loss-0.75
+INFO:root:min-0.574320912361145, max-1.0
+INFO:root:step-520, loss-0.800000011920929
+INFO:root:min-0.521452784538269, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-521, loss-0.7799999713897705
+INFO:root:min-0.5689675807952881, max-1.0
+INFO:root:step-522, loss-0.7699999809265137
+INFO:root:min-0.5336312055587769, max-1.0
+INFO:root:step-523, loss-0.7900000214576721
+INFO:root:min-0.6421006917953491, max-1.0
+INFO:root:step-524, loss-0.7799999713897705
+INFO:root:min-0.5865341424942017, max-1.0
+INFO:root:step-525, loss-0.7699999809265137
+INFO:root:min-0.5879379510879517, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-526, loss-0.7400000095367432
+INFO:root:min-0.5167139768600464, max-1.0
+INFO:root:step-527, loss-0.7799999713897705
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-528, loss-0.800000011920929
+INFO:root:min-0.5933181047439575, max-1.0
+INFO:root:step-529, loss-0.7799999713897705
+INFO:root:min-0.6069275140762329, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-530, loss-0.7599999904632568
+INFO:root:min-0.4987705945968628, max-1.0
+INFO:root:step-531, loss-0.7900000214576721
+INFO:root:min-0.5465102195739746, max-1.0
+INFO:root:step-532, loss-0.7599999904632568
+INFO:root:min-0.5403609275817871, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-533, loss-0.7900000214576721
+INFO:root:min-0.6314563155174255, max-1.0
+INFO:root:step-534, loss-0.7900000214576721
+INFO:root:min-0.5385270118713379, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-535, loss-0.800000011920929
+INFO:root:min-0.521712064743042, max-1.0
+INFO:root:step-536, loss-0.7799999713897705
+INFO:root:min-0.6139695644378662, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-537, loss-0.7799999713897705
+INFO:root:min-0.6025503873825073, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-538, loss-0.7799999713897705
+INFO:root:min-0.5940805077552795, max-1.0
+INFO:root:step-539, loss-0.7799999713897705
+INFO:root:min-0.5517692565917969, max-1.0
+INFO:root:step-540, loss-0.7699999809265137
+INFO:root:min-0.5336312055587769, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-541, loss-0.75
+INFO:root:min-0.5203530788421631, max-1.0
+INFO:root:step-542, loss-0.7699999809265137
+INFO:root:min-0.5334358811378479, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-543, loss-0.7799999713897705
+INFO:root:min-0.4820011258125305, max-1.0
+INFO:root:step-544, loss-0.7900000214576721
+INFO:root:min-0.5432114005088806, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-545, loss-0.7699999809265137
+INFO:root:min-0.5626630783081055, max-1.0
+INFO:root:step-546, loss-0.7799999713897705
+INFO:root:min-0.5235006809234619, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-547, loss-0.7699999809265137
+INFO:root:min-0.5419826507568359, max-1.0
+INFO:root:step-548, loss-0.7799999713897705
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-549, loss-0.7699999809265137
+INFO:root:min-0.5198906064033508, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-550, loss-0.800000011920929
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-551, loss-0.7599999904632568
+INFO:root:min-0.46931326389312744, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-552, loss-0.7799999713897705
+INFO:root:min-0.5364353060722351, max-1.0
+INFO:root:step-553, loss-0.7699999809265137
+INFO:root:min-0.5414800047874451, max-1.0
+INFO:root:step-554, loss-0.800000011920929
+INFO:root:min-0.6364732980728149, max-1.0
+INFO:root:step-555, loss-0.7699999809265137
+INFO:root:min-0.570391058921814, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-556, loss-0.7699999809265137
+INFO:root:min-0.5853145122528076, max-1.0
+INFO:root:step-557, loss-0.8100000023841858
+INFO:root:min-0.6108431816101074, max-1.0
+INFO:root:step-558, loss-0.800000011920929
+INFO:root:min-0.6250252723693848, max-1.0
+INFO:root:step-559, loss-0.8100000023841858
+INFO:root:min-0.5318838357925415, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-560, loss-0.7799999713897705
+INFO:root:min-0.48764532804489136, max-1.0
+INFO:root:step-561, loss-0.7799999713897705
+INFO:root:min-0.6066168546676636, max-1.0
+INFO:root:step-562, loss-0.7799999713897705
+INFO:root:min-0.49621498584747314, max-1.0
+INFO:root:step-563, loss-0.7900000214576721
+INFO:root:min-0.5835503935813904, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-564, loss-0.7900000214576721
+INFO:root:min-0.58753502368927, max-1.0
+INFO:root:step-565, loss-0.7900000214576721
+INFO:root:min-0.5446206331253052, max-1.0
+INFO:root:step-566, loss-0.7799999713897705
+INFO:root:min-0.56226646900177, max-1.0
+INFO:root:step-567, loss-0.7599999904632568
+INFO:root:min-0.4344773292541504, max-1.0
+INFO:root:step-568, loss-0.7799999713897705
+INFO:root:min-0.5730763673782349, max-1.0
+INFO:root:step-569, loss-0.7900000214576721
+INFO:root:min-0.5165565013885498, max-1.0
+INFO:root:step-570, loss-0.7799999713897705
+INFO:root:min-0.5447611212730408, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-571, loss-0.7799999713897705
+INFO:root:min-0.5809849500656128, max-1.0
+INFO:root:step-572, loss-0.7799999713897705
+INFO:root:min-0.5945832133293152, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-573, loss-0.8100000023841858
+INFO:root:min-0.4726959466934204, max-1.0
+INFO:root:step-574, loss-0.7699999809265137
+INFO:root:min-0.5700626969337463, max-1.0
+INFO:root:step-575, loss-0.7599999904632568
+INFO:root:min-0.5524065494537354, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-576, loss-0.7799999713897705
+INFO:root:min-0.5823822617530823, max-1.0
+INFO:root:step-577, loss-0.7900000214576721
+INFO:root:min-0.5892287492752075, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-578, loss-0.7900000214576721
+INFO:root:min-0.4682406783103943, max-1.0
+INFO:root:step-579, loss-0.7799999713897705
+INFO:root:min-0.5575858950614929, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-580, loss-0.7699999809265137
+INFO:root:min-0.4992067813873291, max-1.0
+INFO:root:step-581, loss-0.7799999713897705
+INFO:root:min-0.5579620599746704, max-1.0
+INFO:root:step-582, loss-0.7799999713897705
+INFO:root:min-0.5939226150512695, max-1.0
+INFO:root:step-583, loss-0.7699999809265137
+INFO:root:min-0.5368832349777222, max-1.0
+INFO:root:step-584, loss-0.7699999809265137
+INFO:root:min-0.5291521549224854, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-585, loss-0.7799999713897705
+INFO:root:min-0.6040588617324829, max-1.0
+INFO:root:beginning validation
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:epoch: 1 
+ precision: 0.0, recall: 0.0, f1: 0.0
+INFO:root:step-586, loss-0.7900000214576721
+INFO:root:min-0.5165804624557495, max-1.0
+INFO:root:step-587, loss-0.7799999713897705
+INFO:root:min-0.5967355966567993, max-1.0
+INFO:root:step-588, loss-0.7900000214576721
+INFO:root:min-0.5078880786895752, max-1.0
+INFO:root:step-589, loss-0.7900000214576721
+INFO:root:min-0.5648187398910522, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-590, loss-0.7699999809265137
+INFO:root:min-0.411948561668396, max-1.0
+INFO:root:step-591, loss-0.7799999713897705
+INFO:root:min-0.5599257349967957, max-1.0
+INFO:root:step-592, loss-0.800000011920929
+INFO:root:min-0.5639178156852722, max-1.0
+INFO:root:step-593, loss-0.7799999713897705
+INFO:root:min-0.502551257610321, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-594, loss-0.7799999713897705
+INFO:root:min-0.5992992520332336, max-1.0
+INFO:root:step-595, loss-0.7799999713897705
+INFO:root:min-0.5649684071540833, max-1.0
+INFO:root:step-596, loss-0.7799999713897705
+INFO:root:min-0.4108257293701172, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-597, loss-0.7799999713897705
+INFO:root:min-0.5622752904891968, max-1.0
+INFO:root:step-598, loss-0.7799999713897705
+INFO:root:min-0.5603455901145935, max-1.0
+INFO:root:step-599, loss-0.800000011920929
+INFO:root:min-0.6366235017776489, max-1.0
+INFO:root:step-600, loss-0.7900000214576721
+INFO:root:min-0.556204617023468, max-1.0
+INFO:root:step-601, loss-0.7900000214576721
+INFO:root:min-0.46734875440597534, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-602, loss-0.800000011920929
+INFO:root:min-0.5778650641441345, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-603, loss-0.7699999809265137
+INFO:root:min-0.6081631183624268, max-1.0
+INFO:root:step-604, loss-0.7799999713897705
+INFO:root:min-0.575139582157135, max-1.0
+INFO:root:step-605, loss-0.7799999713897705
+INFO:root:min-0.5924553275108337, max-1.0
+INFO:root:step-606, loss-0.7799999713897705
+INFO:root:min-0.5988674163818359, max-1.0
+INFO:root:step-607, loss-0.7900000214576721
+INFO:root:min-0.5599488615989685, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-608, loss-0.7799999713897705
+INFO:root:min-0.5638908743858337, max-1.0
+INFO:root:step-609, loss-0.7799999713897705
+INFO:root:min-0.5618035197257996, max-1.0
+INFO:root:step-610, loss-0.7699999809265137
+INFO:root:min-0.5541136860847473, max-1.0
+INFO:root:step-611, loss-0.7699999809265137
+INFO:root:min-0.49131202697753906, max-1.0
+INFO:root:step-612, loss-0.7799999713897705
+INFO:root:min-0.5944749712944031, max-1.0
+INFO:root:step-613, loss-0.7799999713897705
+INFO:root:min-0.5589144825935364, max-1.0
+INFO:root:step-614, loss-0.7799999713897705
+INFO:root:min-0.5347415208816528, max-1.0
+INFO:root:step-615, loss-0.7799999713897705
+INFO:root:min-0.6041569709777832, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-616, loss-0.800000011920929
+INFO:root:min-0.5688385963439941, max-1.0
+INFO:root:step-617, loss-0.7799999713897705
+INFO:root:min-0.5250005125999451, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-618, loss-0.7699999809265137
+INFO:root:min-0.6036578416824341, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-619, loss-0.800000011920929
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-620, loss-0.8100000023841858
+INFO:root:min-0.6131893396377563, max-1.0
+INFO:root:step-621, loss-0.7900000214576721
+INFO:root:min-0.6070754528045654, max-1.0
+INFO:root:step-622, loss-0.7900000214576721
+INFO:root:min-0.5683321952819824, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-623, loss-0.7799999713897705
+INFO:root:min-0.5726556777954102, max-1.0
+INFO:root:step-624, loss-0.800000011920929
+INFO:root:min-0.5594494342803955, max-1.0
+INFO:root:step-625, loss-0.800000011920929
+INFO:root:min-0.5205709934234619, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-626, loss-0.7900000214576721
+INFO:root:min-0.5815407633781433, max-1.0
+INFO:root:step-627, loss-0.7799999713897705
+INFO:root:min-0.586989164352417, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-628, loss-0.7699999809265137
+INFO:root:min-0.5188692808151245, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-629, loss-0.800000011920929
+INFO:root:min-0.5621051788330078, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-630, loss-0.7699999809265137
+INFO:root:min-0.5721758008003235, max-1.0
+INFO:root:step-631, loss-0.7599999904632568
+INFO:root:min-0.4973936676979065, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-632, loss-0.7699999809265137
+INFO:root:min-0.49055880308151245, max-1.0
+INFO:root:step-633, loss-0.7699999809265137
+INFO:root:min-0.5317623615264893, max-1.0
+INFO:root:step-634, loss-0.7900000214576721
+INFO:root:min-0.5846375226974487, max-1.0
+INFO:root:step-635, loss-0.7799999713897705
+INFO:root:min-0.6142801642417908, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-636, loss-0.7799999713897705
+INFO:root:min-0.584177553653717, max-1.0
+INFO:root:step-637, loss-0.7900000214576721
+INFO:root:min-0.5879298448562622, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-638, loss-0.7799999713897705
+INFO:root:min-0.5829163789749146, max-1.0
+INFO:root:step-639, loss-0.7699999809265137
+INFO:root:min-0.5683321952819824, max-1.0
+INFO:root:step-640, loss-0.7799999713897705
+INFO:root:min-0.5590184926986694, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-641, loss-0.7799999713897705
+INFO:root:min-0.4642278552055359, max-1.0
+INFO:root:step-642, loss-0.7900000214576721
+INFO:root:min-0.581349790096283, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-643, loss-0.7699999809265137
+INFO:root:min-0.5138816237449646, max-1.0
+INFO:root:step-644, loss-0.7900000214576721
+INFO:root:min-0.5683322548866272, max-1.0
+INFO:root:step-645, loss-0.800000011920929
+INFO:root:min-0.5659704208374023, max-1.0
+INFO:root:step-646, loss-0.7799999713897705
+INFO:root:min-0.559873640537262, max-1.0
+INFO:root:step-647, loss-0.7799999713897705
+INFO:root:min-0.5724325180053711, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-648, loss-0.7900000214576721
+INFO:root:min-0.5748705863952637, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-649, loss-0.7900000214576721
+INFO:root:min-0.6205225586891174, max-1.0
+INFO:root:step-650, loss-0.7799999713897705
+INFO:root:min-0.5127158761024475, max-1.0
+INFO:root:step-651, loss-0.800000011920929
+INFO:root:min-0.570271909236908, max-1.0
+INFO:root:step-652, loss-0.7900000214576721
+INFO:root:min-0.5463207364082336, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-653, loss-0.7699999809265137
+INFO:root:min-0.5297049880027771, max-1.0
+INFO:root:step-654, loss-0.800000011920929
+INFO:root:min-0.5131152272224426, max-1.0
+INFO:root:step-655, loss-0.7799999713897705
+INFO:root:min-0.5517692565917969, max-1.0
+INFO:root:step-656, loss-0.7900000214576721
+INFO:root:min-0.5265656113624573, max-1.0
+INFO:root:step-657, loss-0.800000011920929
+INFO:root:min-0.5638909339904785, max-1.0
+INFO:root:step-658, loss-0.7699999809265137
+INFO:root:min-0.5582951307296753, max-1.0
+INFO:root:step-659, loss-0.7900000214576721
+INFO:root:min-0.5805585384368896, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-660, loss-0.7799999713897705
+INFO:root:min-0.6030555963516235, max-1.0
+INFO:root:step-661, loss-0.800000011920929
+INFO:root:min-0.5606357455253601, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-662, loss-0.7599999904632568
+INFO:root:min-0.5878103971481323, max-1.0
+INFO:root:step-663, loss-0.7799999713897705
+INFO:root:min-0.5831006169319153, max-1.0
+INFO:root:step-664, loss-0.7799999713897705
+INFO:root:min-0.5860280990600586, max-1.0
+INFO:root:step-665, loss-0.800000011920929
+INFO:root:min-0.516572117805481, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-666, loss-0.7699999809265137
+INFO:root:min-0.5264943838119507, max-1.0
+INFO:root:step-667, loss-0.7799999713897705
+INFO:root:min-0.5414997339248657, max-1.0
+INFO:root:step-668, loss-0.7599999904632568
+INFO:root:min-0.493202805519104, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-669, loss-0.800000011920929
+INFO:root:min-0.5407397747039795, max-1.0
+INFO:root:step-670, loss-0.7699999809265137
+INFO:root:min-0.5182040333747864, max-1.0
+INFO:root:step-671, loss-0.7900000214576721
+INFO:root:min-0.5407397747039795, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-672, loss-0.7599999904632568
+INFO:root:min-0.5143855214118958, max-1.0
+INFO:root:step-673, loss-0.7900000214576721
+INFO:root:min-0.6017066240310669, max-1.0
+INFO:root:step-674, loss-0.7900000214576721
+INFO:root:min-0.4708883762359619, max-1.0
+INFO:root:step-675, loss-0.7900000214576721
+INFO:root:min-0.5877512693405151, max-1.0
+INFO:root:step-676, loss-0.800000011920929
+INFO:root:min-0.5943386554718018, max-1.0
+INFO:root:step-677, loss-0.7900000214576721
+INFO:root:min-0.5865867137908936, max-1.0
+INFO:root:step-678, loss-0.800000011920929
+INFO:root:min-0.5545473098754883, max-1.0
+INFO:root:step-679, loss-0.7799999713897705
+INFO:root:min-0.5701335072517395, max-1.0
+INFO:root:step-680, loss-0.800000011920929
+INFO:root:min-0.5925113558769226, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-681, loss-0.7799999713897705
+INFO:root:min-0.526565670967102, max-1.0
+INFO:root:step-682, loss-0.800000011920929
+INFO:root:min-0.5274001359939575, max-1.0
+INFO:root:step-683, loss-0.7900000214576721
+INFO:root:min-0.5182459950447083, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-684, loss-0.7699999809265137
+INFO:root:min-0.5710367560386658, max-1.0
+INFO:root:step-685, loss-0.7799999713897705
+INFO:root:min-0.6233083009719849, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-686, loss-0.7799999713897705
+INFO:root:min-0.5515735149383545, max-1.0
+INFO:root:step-687, loss-0.7900000214576721
+INFO:root:min-0.5517692565917969, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-688, loss-0.7900000214576721
+INFO:root:min-0.5598580837249756, max-1.0
+INFO:root:step-689, loss-0.800000011920929
+INFO:root:min-0.6007465124130249, max-1.0
+INFO:root:step-690, loss-0.7699999809265137
+INFO:root:min-0.5346649289131165, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-691, loss-0.7900000214576721
+INFO:root:min-0.5276650786399841, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-692, loss-0.7599999904632568
+INFO:root:min-0.5395067930221558, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-693, loss-0.7799999713897705
+INFO:root:min-0.5662678480148315, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-694, loss-0.7900000214576721
+INFO:root:min-0.5216758847236633, max-1.0
+INFO:root:step-695, loss-0.7900000214576721
+INFO:root:min-0.5951938033103943, max-1.0
+INFO:root:step-696, loss-0.7799999713897705
+INFO:root:min-0.6001924276351929, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-697, loss-0.7699999809265137
+INFO:root:min-0.5266388654708862, max-1.0
+INFO:root:step-698, loss-0.7799999713897705
+INFO:root:min-0.605440080165863, max-1.0
+INFO:root:step-699, loss-0.7799999713897705
+INFO:root:min-0.5600024461746216, max-1.0
+INFO:root:step-700, loss-0.7799999713897705
+INFO:root:min-0.5361554622650146, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-701, loss-0.7699999809265137
+INFO:root:min-0.5665338039398193, max-1.0
+INFO:root:step-702, loss-0.7699999809265137
+INFO:root:min-0.5798735618591309, max-1.0
+INFO:root:step-703, loss-0.7799999713897705
+INFO:root:min-0.5683321356773376, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-704, loss-0.7799999713897705
+INFO:root:min-0.5577797293663025, max-1.0
+INFO:root:step-705, loss-0.7900000214576721
+INFO:root:min-0.5831300616264343, max-1.0
+INFO:root:step-706, loss-0.7599999904632568
+INFO:root:min-0.4645996689796448, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-707, loss-0.7900000214576721
+INFO:root:min-0.5876302719116211, max-1.0
+INFO:root:step-708, loss-0.7799999713897705
+INFO:root:min-0.5669221878051758, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-709, loss-0.7799999713897705
+INFO:root:min-0.5656314492225647, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-710, loss-0.7900000214576721
+INFO:root:min-0.5726454854011536, max-1.0
+INFO:root:step-711, loss-0.800000011920929
+INFO:root:min-0.4235858917236328, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-712, loss-0.8100000023841858
+INFO:root:min-0.5728752017021179, max-1.0
+INFO:root:step-713, loss-0.8100000023841858
+INFO:root:min-0.5318095684051514, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-714, loss-0.7900000214576721
+INFO:root:min-0.5689149498939514, max-1.0
+INFO:root:step-715, loss-0.7900000214576721
+INFO:root:min-0.49030041694641113, max-1.0
+INFO:root:step-716, loss-0.800000011920929
+INFO:root:min-0.6000045537948608, max-1.0
+INFO:root:step-717, loss-0.7799999713897705
+INFO:root:min-0.5555179119110107, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-718, loss-0.8299999833106995
+INFO:root:min-0.5966490507125854, max-1.0
+INFO:root:step-719, loss-0.7699999809265137
+INFO:root:min-0.5432114005088806, max-1.0
+INFO:root:step-720, loss-0.7799999713897705
+INFO:root:min-0.5210790634155273, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-721, loss-0.7599999904632568
+INFO:root:min-0.5577797293663025, max-1.0
+INFO:root:step-722, loss-0.7699999809265137
+INFO:root:min-0.5905188918113708, max-1.0
+INFO:root:step-723, loss-0.7900000214576721
+INFO:root:min-0.5756214261054993, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-724, loss-0.7699999809265137
+INFO:root:min-0.5830471515655518, max-1.0
+INFO:root:step-725, loss-0.800000011920929
+INFO:root:min-0.6071307063102722, max-1.0
+INFO:root:step-726, loss-0.7799999713897705
+INFO:root:min-0.5865866541862488, max-1.0
+INFO:root:step-727, loss-0.7699999809265137
+INFO:root:min-0.5400638580322266, max-1.0
+INFO:root:step-728, loss-0.7900000214576721
+INFO:root:min-0.501524031162262, max-1.0
+INFO:root:step-729, loss-0.7900000214576721
+INFO:root:min-0.5331823825836182, max-1.0
+INFO:root:step-730, loss-0.7599999904632568
+INFO:root:min-0.5677666068077087, max-1.0
+INFO:root:step-731, loss-0.7799999713897705
+INFO:root:min-0.551586389541626, max-1.0
+INFO:root:step-732, loss-0.7799999713897705
+INFO:root:min-0.5122299194335938, max-1.0
+INFO:root:step-733, loss-0.7799999713897705
+INFO:root:min-0.6189661622047424, max-1.0
+INFO:root:step-734, loss-0.7799999713897705
+INFO:root:min-0.5905463695526123, max-1.0
+INFO:root:step-735, loss-0.7900000214576721
+INFO:root:min-0.5271894931793213, max-1.0
+INFO:root:step-736, loss-0.7799999713897705
+INFO:root:min-0.5495275259017944, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-737, loss-0.7900000214576721
+INFO:root:min-0.5940805077552795, max-1.0
+INFO:root:step-738, loss-0.7799999713897705
+INFO:root:min-0.5318096280097961, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root.DataLoader:no funcs available
+INFO:root:step-739, loss-0.8100000023841858
+INFO:root:min-0.552395224571228, max-1.0
+INFO:root:step-740, loss-0.7799999713897705
+INFO:root:min-0.5495275259017944, max-1.0
+INFO:root:step-741, loss-0.7799999713897705
+INFO:root:min-0.6106671094894409, max-1.0
+INFO:root:step-742, loss-0.7699999809265137
+INFO:root:min-0.5487815141677856, max-1.0
+INFO:root:step-743, loss-0.7900000214576721
+INFO:root:min-0.49272453784942627, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-744, loss-0.7699999809265137
+INFO:root:min-0.5347975492477417, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-745, loss-0.7900000214576721
+INFO:root:min-0.5680339932441711, max-1.0
+INFO:root:step-746, loss-0.7799999713897705
+INFO:root:min-0.568941593170166, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-747, loss-0.800000011920929
+INFO:root:min-0.5477662086486816, max-1.0
+INFO:root.DataLoader:no funcs available
+INFO:root:step-748, loss-0.7699999809265137
+INFO:root:min-0.5772443413734436, max-1.0
+INFO:root:step-749, loss-0.7699999809265137
+INFO:root:min-0.53719562292099, max-1.0
+INFO:root:step-750, loss-0.7900000214576721
+INFO:root:min-0.5986968874931335, max-1.0
+slurmstepd: error: *** JOB 20795 ON hu006 CANCELLED AT 2018-08-21T11:46:42 ***
